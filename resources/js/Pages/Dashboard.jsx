@@ -1,0 +1,250 @@
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { Head, usePage, router } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
+import AttendanceFab from '@/Components/AttendanceFab';
+
+export default function Dashboard({ stats = [], activities = [], branches = [], activeAttendance = null }) {
+    const user = usePage().props.auth.user;
+    const role = user?.role || 'EMPLOYEE';
+
+    // State for selected branch (clock-in)
+    const [selectedBranchId, setSelectedBranchId] = useState('');
+
+    useEffect(() => {
+        if (branches.length > 0) {
+            setSelectedBranchId(branches[0].id.toString());
+        }
+    }, [branches]);
+
+    // Active shift timer state
+    const [elapsedTime, setElapsedTime] = useState('00:00:00');
+
+    useEffect(() => {
+        if (!activeAttendance) return;
+        
+        const startTime = new Date(activeAttendance.clock_in_at).getTime();
+        
+        const updateTimer = () => {
+            const now = new Date().getTime();
+            const diff = now - startTime;
+            if (diff < 0) {
+                setElapsedTime('00:00:00');
+                return;
+            }
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            const pad = (n) => String(n).padStart(2, '0');
+            setElapsedTime(`${pad(hours)}:${pad(minutes)}:${pad(seconds)}`);
+        };
+
+        updateTimer();
+        const interval = setInterval(updateTimer, 1000);
+        return () => clearInterval(interval);
+    }, [activeAttendance]);
+
+    const handleClockIn = (e) => {
+        e.preventDefault();
+        if (!selectedBranchId) {
+            Swal.fire({
+                title: 'Select Branch',
+                text: 'Please choose a branch to clock in.',
+                icon: 'warning',
+                background: '#1E1E1E',
+                color: '#ffffff',
+                confirmButtonColor: '#4f46e5',
+                customClass: {
+                    title: 'tracking-widest uppercase text-sm font-bold',
+                    confirmButton: 'rounded-none font-bold tracking-widest text-xs uppercase'
+                }
+            });
+            return;
+        }
+
+        router.post('/attendance/clock-in', {
+            branch_id: selectedBranchId
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    icon: 'success',
+                    title: 'Clocked in successfully!',
+                    background: '#1E1E1E',
+                    color: '#ffffff'
+                });
+            }
+        });
+    };
+
+    const handleClockOut = (e) => {
+        e.preventDefault();
+        router.post('/attendance/clock-out', {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    icon: 'success',
+                    title: 'Clocked out successfully!',
+                    background: '#1E1E1E',
+                    color: '#ffffff'
+                });
+            }
+        });
+    };
+
+    return (
+        <AuthenticatedLayout
+            header={
+                <h2 className="text-sm tracking-widest font-bold uppercase text-white">
+                    Dashboard Overview
+                </h2>
+            }
+        >
+            <Head title="Dashboard" />
+
+            <div className="py-4 sm:py-6">
+                <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h3 className="text-xl sm:text-2xl font-bold text-white mb-1">WELCOME BACK, {user.name.toUpperCase()}</h3>
+                        <p className="text-[10px] sm:text-xs text-[#A0A0A0] uppercase tracking-widest">Here is what's happening today.</p>
+                    </div>
+                </div>
+
+                {/* Clock In / Out Container for Employee */}
+                {role === 'EMPLOYEE' && (
+                    <div className="mb-6 sm:mb-8 bg-[#1E1E1E] border border-[#2C2C2C] p-5 sm:p-6">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                            <div>
+                                <h4 className="text-xs text-[#A0A0A0] font-bold tracking-widest uppercase mb-1">Shift Controller</h4>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest">Mark your attendance at your working branch</p>
+                            </div>
+                            
+                            {activeAttendance ? (
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 w-full md:w-auto">
+                                    <div className="border-l-2 border-green-500 pl-4 py-1">
+                                        <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">ACTIVE SHIFT AT {activeAttendance.branch?.name?.toUpperCase()}</div>
+                                        <div className="text-2xl font-black text-white font-mono tracking-wider mt-1">{elapsedTime}</div>
+                                    </div>
+                                    <button
+                                        onClick={handleClockOut}
+                                        className="w-full sm:w-auto bg-red-600 hover:bg-red-500 text-white font-bold text-xs tracking-widest uppercase py-3.5 px-8 transition-colors rounded-none"
+                                    >
+                                        Clock Out
+                                    </button>
+                                </div>
+                            ) : (
+                                <form onSubmit={handleClockIn} className="flex flex-col sm:flex-row gap-4 w-full md:w-auto items-end">
+                                    <div className="w-full sm:w-64">
+                                        <label className="block text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-2">Select Branch</label>
+                                        <select
+                                            value={selectedBranchId}
+                                            onChange={(e) => setSelectedBranchId(e.target.value)}
+                                            className="w-full rounded-none border-[#2C2C2C] bg-[#121212] text-white text-xs py-3 px-4 focus:border-indigo-500 focus:ring-0 uppercase tracking-wider font-bold"
+                                        >
+                                            {branches.map((b) => (
+                                                <option key={b.id} value={b.id}>
+                                                    {b.name}
+                                                </option>
+                                            ))}
+                                            {branches.length === 0 && (
+                                                <option value="">No Active Branches Available</option>
+                                            )}
+                                        </select>
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={branches.length === 0}
+                                        className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs tracking-widest uppercase py-3.5 px-8 transition-colors rounded-none disabled:opacity-50"
+                                    >
+                                        Clock In
+                                    </button>
+                                </form>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                    {stats.map((stat, i) => (
+                        <div key={i} className="bg-[#1E1E1E] border border-[#2C2C2C] p-5 sm:p-6 flex flex-col justify-between hover:border-[#4A4A4A] transition-colors cursor-default">
+                            <h4 className="text-[10px] sm:text-xs text-[#A0A0A0] font-bold tracking-widest uppercase mb-4">{stat.label}</h4>
+                            <div className="text-4xl sm:text-5xl font-black text-white mb-4 sm:mb-6">{stat.value}</div>
+                            <div className={`text-[9px] sm:text-[10px] font-bold tracking-widest uppercase ${stat.trendUp ? 'text-indigo-400' : 'text-red-400'}`}>
+                                {stat.trend}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Recent Activity Card Container */}
+                <div className="bg-[#1E1E1E] border border-[#2C2C2C]">
+                    <div className="p-4 sm:p-6 border-b border-[#2C2C2C]">
+                        <h4 className="text-xs text-white font-bold tracking-widest uppercase">Recent Activity</h4>
+                    </div>
+
+                    {activities && activities.length > 0 ? (
+                        <>
+                            {/* Mobile View: Cards */}
+                            <div className="sm:hidden grid grid-cols-1 divide-y divide-[#2C2C2C]">
+                                {activities.map((activity, i) => (
+                                    <div key={i} className="p-4 bg-[#1E1E1E]">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">{activity.date}</span>
+                                            <span className={`px-2 py-0.5 text-[9px] font-bold tracking-widest uppercase border ${activity.statusColor}`}>
+                                                {activity.status}
+                                            </span>
+                                        </div>
+                                        <h4 className="text-sm font-bold text-white uppercase tracking-wide">{activity.event}</h4>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Desktop View: Table */}
+                            <div className="hidden sm:block overflow-x-auto">
+                                <table className="min-w-full divide-y divide-[#2C2C2C]">
+                                    <thead className="bg-[#121212]">
+                                        <tr>
+                                            <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Date</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Event</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-[#2C2C2C] bg-[#1E1E1E]">
+                                        {activities.map((activity, i) => (
+                                            <tr key={i} className="hover:bg-[#2C2C2C] transition-colors">
+                                                <td className="px-6 py-4 whitespace-nowrap text-gray-400 text-xs tracking-widest uppercase">{activity.date}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-white text-sm font-bold tracking-wide uppercase">{activity.event}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className={`px-2 py-1 text-[10px] font-bold tracking-widest uppercase border ${activity.statusColor}`}>
+                                                        {activity.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="p-12 text-center text-gray-400 text-xs uppercase tracking-widest">
+                            No shift activity recorded yet.
+                        </div>
+                    )}
+                </div>
+            </div>
+            {role === 'EMPLOYEE' && (
+                <AttendanceFab branches={branches} activeAttendance={activeAttendance} />
+            )}
+        </AuthenticatedLayout>
+    );
+}

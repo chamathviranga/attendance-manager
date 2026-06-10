@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+    <defs>
+        <linearGradient id="clock-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#818CF8" />
+            <stop offset="100%" stop-color="#4F46E5" />
+        </linearGradient>
+    </defs>
+    <!-- Dark base background -->
+    <rect width="100" height="100" rx="24" fill="#1E1E1E" />
+    <rect x="2" y="2" width="96" height="96" rx="22" stroke="#2C2C2C" stroke-width="2" />
+    
+    <!-- Outer circle/ring (clock representation) -->
+    <circle cx="50" cy="50" r="34" stroke="url(#clock-grad)" stroke-width="7" />
+    
+    <!-- Hands forming checkmark (attendance check) -->
+    <path d="M38 48 L48 58 L66 34" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+</svg>
