@@ -19,6 +19,15 @@ class DashboardController extends Controller
         $user = $request->user();
         $role = $user->role;
 
+        // Date range filters (default to current week)
+        $fromDate = $request->input('from_date', Carbon::now()->startOfWeek()->toDateString());
+        $toDate = $request->input('to_date', Carbon::now()->endOfWeek()->toDateString());
+
+        $startDateTime = Carbon::parse($fromDate)->startOfDay();
+        $endDateTime = Carbon::parse($toDate)->endOfDay();
+
+        $isDefaultWeek = ($fromDate === Carbon::now()->startOfWeek()->toDateString() && $toDate === Carbon::now()->endOfWeek()->toDateString());
+
         $stats = [];
         $activities = [];
         $branches = [];
@@ -39,7 +48,7 @@ class DashboardController extends Controller
             $business = Business::where('user_id', $user->id)->first();
             $totalEmployees = 0;
             $checkedInCount = 0;
-            $weeklyPayrollEst = 0;
+            $payrollEst = 0;
 
             if ($business) {
                 $totalEmployees = Employee::where('business_id', $business->id)->count();
@@ -49,23 +58,23 @@ class DashboardController extends Controller
                     ->whereNull('clock_out_at')
                     ->count();
 
-                $startOfWeek = Carbon::now()->startOfWeek();
-                $attendancesThisWeek = Attendance::with(['user.employee'])
+                $attendancesThisPeriod = Attendance::with(['user.employee'])
                     ->whereHas('branch', function ($q) use ($business) {
                         $q->where('business_id', $business->id);
                     })
-                    ->where('clock_in_at', '>=', $startOfWeek)
+                    ->whereBetween('clock_in_at', [$startDateTime, $endDateTime])
                     ->get();
 
-                foreach ($attendancesThisWeek as $att) {
+                foreach ($attendancesThisPeriod as $att) {
                     $rate = $att->user->employee->salary ?? 0;
-                    $weeklyPayrollEst += (($att->duration_minutes ?? 0) / 60) * $rate;
+                    $payrollEst += (($att->duration_minutes ?? 0) / 60) * $rate;
                 }
 
                 $recentAttendances = Attendance::with(['user', 'branch'])
                     ->whereHas('branch', function ($q) use ($business) {
                         $q->where('business_id', $business->id);
                     })
+                    ->whereBetween('clock_in_at', [$startDateTime, $endDateTime])
                     ->orderBy('clock_in_at', 'desc')
                     ->get();
 
@@ -92,14 +101,16 @@ class DashboardController extends Controller
                 }
             }
 
+            $payrollLabel = $isDefaultWeek ? 'EST. PAYROLL (WEEK)' : 'EST. PAYROLL (PERIOD)';
+
             $stats = [
                 ['label' => 'TOTAL EMPLOYEES', 'value' => (string) $totalEmployees, 'trend' => 'ALL REGISTERED', 'trendUp' => true],
                 ['label' => 'CHECKED IN NOW', 'value' => "{$checkedInCount} / {$totalEmployees}", 'trend' => 'ACTIVE ON SHIFT', 'trendUp' => true],
-                ['label' => 'EST. PAYROLL (WEEK)', 'value' => '£' . number_format($weeklyPayrollEst, 2), 'trend' => 'ESTIMATED EARNINGS', 'trendUp' => false],
+                ['label' => $payrollLabel, 'value' => '£' . number_format($payrollEst, 2), 'trend' => 'ESTIMATED EARNINGS', 'trendUp' => false],
             ];
         } else {
             $employee = Employee::where('user_id', $user->id)->first();
-            $weeklyHours = 0;
+            $periodHours = 0;
             $estEarnings = 0;
 
             if ($employee) {
@@ -109,18 +120,17 @@ class DashboardController extends Controller
                     ->where('user_id', $user->id)
                     ->whereNull('clock_out_at')
                     ->first();
-
-                $startOfWeek = Carbon::now()->startOfWeek();
                 
-                $weeklyMinutes = Attendance::where('user_id', $user->id)
-                    ->where('clock_in_at', '>=', $startOfWeek)
+                $periodMinutes = Attendance::where('user_id', $user->id)
+                    ->whereBetween('clock_in_at', [$startDateTime, $endDateTime])
                     ->sum('duration_minutes') ?? 0;
 
-                $weeklyHours = round($weeklyMinutes / 60, 1);
-                $estEarnings = $weeklyHours * ($employee->salary ?? 0);
+                $periodHours = round($periodMinutes / 60, 1);
+                $estEarnings = $periodHours * ($employee->salary ?? 0);
 
                 $recentAttendances = Attendance::with('branch')
                     ->where('user_id', $user->id)
+                    ->whereBetween('clock_in_at', [$startDateTime, $endDateTime])
                     ->orderBy('clock_in_at', 'desc')
                     ->get();
 
@@ -144,10 +154,13 @@ class DashboardController extends Controller
                 }
             }
 
+            $hoursLabel = $isDefaultWeek ? 'WORKED (WEEK)' : 'WORKED (PERIOD)';
+            $earningsLabel = $isDefaultWeek ? 'EST. EARNINGS' : 'EST. EARNINGS (PERIOD)';
+
             $stats = [
-                ['label' => 'WORKED (WEEK)', 'value' => "{$weeklyHours}h", 'trend' => 'TOTAL HOURS RECORDED', 'trendUp' => true],
+                ['label' => $hoursLabel, 'value' => "{$periodHours}h", 'trend' => 'TOTAL HOURS RECORDED', 'trendUp' => true],
                 ['label' => 'LEAVE BALANCE', 'value' => '12 DAYS', 'trend' => 'STANDARD ANNUAL', 'trendUp' => true],
-                ['label' => 'EST. EARNINGS', 'value' => '£' . number_format($estEarnings, 2), 'trend' => 'ESTIMATED PAY PERIOD', 'trendUp' => true],
+                ['label' => $earningsLabel, 'value' => '£' . number_format($estEarnings, 2), 'trend' => 'ESTIMATED PAY PERIOD', 'trendUp' => true],
             ];
         }
 
@@ -172,6 +185,10 @@ class DashboardController extends Controller
             'activities' => $paginatedActivities,
             'branches' => $branches,
             'activeAttendance' => $activeAttendance,
+            'filters' => [
+                'from_date' => $fromDate,
+                'to_date' => $toDate,
+            ]
         ]);
     }
 }

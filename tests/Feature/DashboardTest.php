@@ -117,7 +117,7 @@ test('dashboard activities are paginated with a limit of 5', function () {
         ]);
     }
 
-    $response = $this->actingAs($owner)->get('/dashboard');
+    $response = $this->actingAs($owner)->get('/dashboard?from_date=' . now()->subDays(7)->toDateString() . '&to_date=' . now()->toDateString());
 
     $response->assertOk();
     $props = $response->original->getData()['page']['props'];
@@ -134,4 +134,71 @@ test('dashboard activities are paginated with a limit of 5', function () {
     $this->assertEquals(5, $activities['per_page']);
     $this->assertCount(5, $activities['data']); // page 1 has 5 items
 });
+
+test('dashboard stats and activities are filtered by custom date range', function () {
+    $owner = User::factory()->create([
+        'role' => 'SHOP_OWNER',
+    ]);
+
+    $business = Business::create([
+        'user_id' => $owner->id,
+        'name' => 'Test Business',
+        'address' => '123 Shop St',
+    ]);
+
+    $branch = Branch::create([
+        'business_id' => $business->id,
+        'name' => 'Main Branch',
+        'address' => '123 Shop St',
+    ]);
+
+    $employeeUser = User::factory()->create([
+        'role' => 'EMPLOYEE',
+    ]);
+
+    $employee = Employee::create([
+        'business_id' => $business->id,
+        'user_id' => $employeeUser->id,
+        'name' => 'Test Employee',
+        'mobile' => '07123456789',
+        'designation' => 'Staff Member',
+        'salary' => 10.00,
+        'is_active' => true,
+    ]);
+
+    // Attendance inside the filtered range (e.g. 2026-06-05)
+    Attendance::create([
+        'user_id' => $employeeUser->id,
+        'branch_id' => $branch->id,
+        'clock_in_at' => '2026-06-05 09:00:00',
+        'clock_out_at' => '2026-06-05 17:00:00',
+        'duration_minutes' => 480, // 8 hours * 10 = 80
+    ]);
+
+    // Attendance outside the filtered range (e.g. 2026-06-15)
+    Attendance::create([
+        'user_id' => $employeeUser->id,
+        'branch_id' => $branch->id,
+        'clock_in_at' => '2026-06-15 09:00:00',
+        'clock_out_at' => '2026-06-15 17:00:00',
+        'duration_minutes' => 480,
+    ]);
+
+    // Request with filter for 2026-06-01 to 2026-06-10
+    $response = $this->actingAs($owner)->get('/dashboard?from_date=2026-06-01&to_date=2026-06-10');
+
+    $response->assertOk();
+    $props = $response->original->getData()['page']['props'];
+
+    // Stats payroll calculation should only include 2026-06-05
+    $stats = $props['stats'];
+    $this->assertEquals('EST. PAYROLL (PERIOD)', $stats[2]['label']);
+    $this->assertEquals('£80.00', $stats[2]['value']);
+
+    // Activities list should only have 1 item (from 2026-06-05)
+    $activities = $props['activities'];
+    $this->assertEquals(1, $activities['total']);
+    $this->assertCount(1, $activities['data']);
+});
+
 

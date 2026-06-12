@@ -4,10 +4,42 @@ import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import AttendanceFab from '@/Components/AttendanceFab';
 
-export default function Dashboard({ stats = [], activities = [], branches = [], activeAttendance = null }) {
+export default function Dashboard({ stats = [], activities = [], branches = [], activeAttendance = null, filters = {} }) {
     const user = usePage().props.auth.user;
     const role = user?.role || 'EMPLOYEE';
     const activitiesData = Array.isArray(activities) ? activities : (activities?.data || []);
+
+    const [fromDate, setFromDate] = useState(filters.from_date || '');
+    const [toDate, setToDate] = useState(filters.to_date || '');
+
+    useEffect(() => {
+        setFromDate(filters.from_date || '');
+        setToDate(filters.to_date || '');
+    }, [filters]);
+
+    const handleFromDateChange = (e) => {
+        const val = e.target.value;
+        setFromDate(val);
+        router.get('/dashboard', {
+            from_date: val,
+            to_date: toDate,
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    const handleToDateChange = (e) => {
+        const val = e.target.value;
+        setToDate(val);
+        router.get('/dashboard', {
+            from_date: fromDate,
+            to_date: val,
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
 
     // State for selected branch (clock-in)
     const [selectedBranchId, setSelectedBranchId] = useState('');
@@ -113,10 +145,43 @@ export default function Dashboard({ stats = [], activities = [], branches = [], 
             <Head title="Dashboard" />
 
             <div className="py-4 sm:py-6">
-                <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="mb-6 sm:mb-8 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                     <div>
                         <h3 className="text-xl sm:text-2xl font-bold text-white mb-1">WELCOME BACK, {user.name.toUpperCase()}</h3>
                         <p className="text-[10px] sm:text-xs text-[#A0A0A0] uppercase tracking-widest">Here is what's happening today.</p>
+                    </div>
+
+                    {/* Date Range Filters */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 w-full lg:w-auto bg-[#1E1E1E] border border-[#2C2C2C] p-3 sm:p-4">
+                        <div className="w-full sm:w-40">
+                            <label className="block text-[9px] text-[#A0A0A0] uppercase tracking-widest font-bold mb-1.5">From Date</label>
+                            <input
+                                type="date"
+                                value={fromDate}
+                                onChange={handleFromDateChange}
+                                className="w-full rounded-none border-[#2C2C2C] bg-[#121212] text-white text-[11px] py-1.5 px-3 focus:border-indigo-500 focus:ring-0 uppercase tracking-wider font-bold"
+                            />
+                        </div>
+                        <div className="w-full sm:w-40">
+                            <label className="block text-[9px] text-[#A0A0A0] uppercase tracking-widest font-bold mb-1.5">To Date</label>
+                            <input
+                                type="date"
+                                value={toDate}
+                                onChange={handleToDateChange}
+                                className="w-full rounded-none border-[#2C2C2C] bg-[#121212] text-white text-[11px] py-1.5 px-3 focus:border-indigo-500 focus:ring-0 uppercase tracking-wider font-bold"
+                            />
+                        </div>
+                        <button
+                            onClick={() => {
+                                router.get('/dashboard', {}, {
+                                    preserveState: false,
+                                    preserveScroll: true,
+                                });
+                            }}
+                            className="bg-[#121212] hover:bg-[#2C2C2C] text-gray-400 hover:text-white font-bold text-[9px] tracking-widest uppercase py-2.5 px-4 border border-[#2C2C2C] transition-colors"
+                        >
+                            Reset
+                        </button>
                     </div>
                 </div>
 
