@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import AttendanceFab from '@/Components/AttendanceFab';
 
-export default function Dashboard({ stats = [], activities = [], branches = [], activeAttendance = null, filters = {} }) {
+export default function Dashboard({ stats = [], activities = [], branches = [], activeAttendance = null, filters = {}, salaryReport = null }) {
     const user = usePage().props.auth.user;
     const role = user?.role || 'EMPLOYEE';
     const activitiesData = Array.isArray(activities) ? activities : (activities?.data || []);
@@ -252,101 +252,156 @@ export default function Dashboard({ stats = [], activities = [], branches = [], 
                     ))}
                 </div>
 
-                {/* Recent Activity Card Container */}
-                <div className="bg-[#1E1E1E] border border-[#2C2C2C]">
-                    <div className="p-4 sm:p-6 border-b border-[#2C2C2C]">
-                        <h4 className="text-xs text-white font-bold tracking-widest uppercase">Recent Activity</h4>
-                    </div>
+                {/* Recent Activity & Salary Spend Report Container */}
+                <div className={role === 'SHOP_OWNER' && salaryReport ? "grid grid-cols-1 lg:grid-cols-3 gap-6" : ""}>
+                    <div className={role === 'SHOP_OWNER' && salaryReport ? "lg:col-span-2 bg-[#1E1E1E] border border-[#2C2C2C] flex flex-col" : "bg-[#1E1E1E] border border-[#2C2C2C]"}>
+                        <div className="p-4 sm:p-6 border-b border-[#2C2C2C]">
+                            <h4 className="text-xs text-white font-bold tracking-widest uppercase">Recent Activity</h4>
+                        </div>
 
-                    {activitiesData && activitiesData.length > 0 ? (
-                        <>
-                            {/* Mobile View: Cards */}
-                            <div className="sm:hidden grid grid-cols-1 divide-y divide-[#2C2C2C]">
-                                {activitiesData.map((activity, i) => (
-                                    <div key={i} className="p-4 bg-[#1E1E1E]">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">{activity.date}</span>
-                                            <span className={`px-2 py-0.5 text-[9px] font-bold tracking-widest uppercase border ${activity.statusColor}`}>
-                                                {activity.status}
-                                            </span>
+                        {activitiesData && activitiesData.length > 0 ? (
+                            <>
+                                {/* Mobile View: Cards */}
+                                <div className="sm:hidden grid grid-cols-1 divide-y divide-[#2C2C2C] flex-1">
+                                    {activitiesData.map((activity, i) => (
+                                        <div key={i} className="p-4 bg-[#1E1E1E]">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">{activity.date}</span>
+                                                <span className={`px-2 py-0.5 text-[9px] font-bold tracking-widest uppercase border ${activity.statusColor}`}>
+                                                    {activity.status}
+                                                </span>
+                                            </div>
+                                            <h4 className="text-sm font-bold text-white uppercase tracking-wide">{activity.event}</h4>
                                         </div>
-                                        <h4 className="text-sm font-bold text-white uppercase tracking-wide">{activity.event}</h4>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
 
-                            {/* Desktop View: Table */}
-                            <div className="hidden sm:block overflow-x-auto">
-                                <table className="min-w-full divide-y divide-[#2C2C2C]">
-                                    <thead className="bg-[#121212]">
-                                        <tr>
-                                            <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Date</th>
-                                            <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Event</th>
-                                            <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-[#2C2C2C] bg-[#1E1E1E]">
-                                        {activitiesData.map((activity, i) => (
-                                            <tr key={i} className="hover:bg-[#2C2C2C] transition-colors">
-                                                <td className="px-6 py-4 whitespace-nowrap text-gray-400 text-xs tracking-widest uppercase">{activity.date}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-white text-sm font-bold tracking-wide uppercase">{activity.event}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`px-2 py-1 text-[10px] font-bold tracking-widest uppercase border ${activity.statusColor}`}>
-                                                        {activity.status}
-                                                    </span>
-                                                </td>
+                                {/* Desktop View: Table */}
+                                <div className="hidden sm:block overflow-x-auto flex-1">
+                                    <table className="min-w-full divide-y divide-[#2C2C2C]">
+                                        <thead className="bg-[#121212]">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Date</th>
+                                                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Event</th>
+                                                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </thead>
+                                        <tbody className="divide-y divide-[#2C2C2C] bg-[#1E1E1E]">
+                                            {activitiesData.map((activity, i) => (
+                                                <tr key={i} className="hover:bg-[#2C2C2C] transition-colors">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-gray-400 text-xs tracking-widest uppercase">{activity.date}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-white text-sm font-bold tracking-wide uppercase">{activity.event}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <span className={`px-2 py-1 text-[10px] font-bold tracking-widest uppercase border ${activity.statusColor}`}>
+                                                            {activity.status}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
 
-                            {/* Pagination Links */}
-                            {activities.links && activities.total > activities.per_page && (
-                                <div className="p-4 border-t border-[#2C2C2C] flex flex-col sm:flex-row items-center justify-between gap-4">
-                                    <div className="text-[10px] text-gray-500 uppercase tracking-widest">
-                                        Showing {activities.from} to {activities.to} of {activities.total} entries
-                                    </div>
-                                    <div className="flex flex-wrap gap-1">
-                                        {activities.links.map((link, idx) => {
-                                            let label = link.label;
-                                            if (label.includes('Previous')) {
-                                                label = 'Previous';
-                                            } else if (label.includes('Next')) {
-                                                label = 'Next';
-                                            }
+                                {/* Pagination Links */}
+                                {activities.links && activities.total > activities.per_page && (
+                                    <div className="p-4 border-t border-[#2C2C2C] flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#1E1E1E]">
+                                        <div className="text-[10px] text-gray-500 uppercase tracking-widest">
+                                            Showing {activities.from} to {activities.to} of {activities.total} entries
+                                        </div>
+                                        <div className="flex flex-wrap gap-1">
+                                            {activities.links.map((link, idx) => {
+                                                let label = link.label;
+                                                if (label.includes('Previous')) {
+                                                    label = 'Previous';
+                                                } else if (label.includes('Next')) {
+                                                    label = 'Next';
+                                                }
 
-                                            if (!link.url) {
+                                                if (!link.url) {
+                                                    return (
+                                                        <span
+                                                            key={idx}
+                                                            className="text-gray-600 font-bold uppercase tracking-widest text-[10px] border border-gray-800/10 px-3 py-2 cursor-not-allowed"
+                                                            dangerouslySetInnerHTML={{ __html: label }}
+                                                        />
+                                                    );
+                                                }
+
                                                 return (
-                                                    <span
+                                                    <button
                                                         key={idx}
-                                                        className="text-gray-600 font-bold uppercase tracking-widest text-[10px] border border-gray-800/10 px-3 py-2 cursor-not-allowed"
+                                                        onClick={() => router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
+                                                        disabled={link.active}
+                                                        className={`font-bold uppercase tracking-widest text-[10px] px-3 py-2 transition-colors border ${
+                                                            link.active
+                                                                ? 'bg-indigo-600 text-white border-indigo-600'
+                                                                : 'text-gray-400 hover:text-white border-gray-500/30 hover:bg-[#2C2C2C]'
+                                                        }`}
                                                         dangerouslySetInnerHTML={{ __html: label }}
                                                     />
                                                 );
-                                            }
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <div className="p-12 text-center text-gray-400 text-xs uppercase tracking-widest flex-1 flex items-center justify-center">
+                                No shift activity recorded yet.
+                            </div>
+                        )}
+                    </div>
 
-                                            return (
-                                                <button
-                                                    key={idx}
-                                                    onClick={() => router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
-                                                    disabled={link.active}
-                                                    className={`font-bold uppercase tracking-widest text-[10px] px-3 py-2 transition-colors border ${
-                                                        link.active
-                                                            ? 'bg-indigo-600 text-white border-indigo-600'
-                                                            : 'text-gray-400 hover:text-white border-gray-500/30 hover:bg-[#2C2C2C]'
-                                                    }`}
-                                                    dangerouslySetInnerHTML={{ __html: label }}
-                                                />
-                                            );
-                                        })}
+                    {role === 'SHOP_OWNER' && salaryReport && (
+                        <div className="bg-[#1E1E1E] border border-[#2C2C2C] flex flex-col">
+                            <div className="p-4 sm:p-6 border-b border-[#2C2C2C] flex justify-between items-center">
+                                <h4 className="text-xs text-white font-bold tracking-widest uppercase">Salary Spend Report</h4>
+                                <span className="text-[9px] text-indigo-400 uppercase tracking-widest font-bold border border-indigo-500/30 px-2 py-0.5">Filtered</span>
+                            </div>
+                            <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between">
+                                <div>
+                                    <div className="mb-6">
+                                        <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">Total Business Spend</div>
+                                        <div className="text-3xl font-black text-white">£{salaryReport.total_business_spend.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                                    </div>
+
+                                    <div className="border-t border-[#2C2C2C] pt-6">
+                                        <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-4">Branch-wise Breakdown</div>
+                                        {salaryReport.branch_spends && salaryReport.branch_spends.length > 0 ? (
+                                            <div className="space-y-4 max-h-[160px] overflow-y-auto pr-1">
+                                                {salaryReport.branch_spends.map((branch, i) => (
+                                                    <div key={i} className="flex justify-between items-center py-2 border-b border-[#2C2C2C]/30 last:border-b-0">
+                                                        <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">{branch.name}</span>
+                                                        <span className="text-xs font-mono font-bold text-indigo-400">£{branch.spend.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-6 text-[10px] text-gray-500 uppercase tracking-widest">
+                                                No branch spends recorded.
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="border-t border-[#2C2C2C] pt-6 mt-6">
+                                        <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-4">Employee-wise Breakdown</div>
+                                        {salaryReport.employee_spends && salaryReport.employee_spends.length > 0 ? (
+                                            <div className="space-y-4 max-h-[160px] overflow-y-auto pr-1">
+                                                {salaryReport.employee_spends.map((employee, i) => (
+                                                    <div key={i} className="flex justify-between items-center py-2 border-b border-[#2C2C2C]/30 last:border-b-0">
+                                                        <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">{employee.name}</span>
+                                                        <span className="text-xs font-mono font-bold text-indigo-400">£{employee.spend.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-6 text-[10px] text-gray-500 uppercase tracking-widest">
+                                                No employee spends recorded.
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                            )}
-                        </>
-                    ) : (
-                        <div className="p-12 text-center text-gray-400 text-xs uppercase tracking-widest">
-                            No shift activity recorded yet.
+                            </div>
                         </div>
                     )}
                 </div>

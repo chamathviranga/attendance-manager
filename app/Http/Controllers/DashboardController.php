@@ -32,6 +32,7 @@ class DashboardController extends Controller
         $activities = [];
         $branches = [];
         $activeAttendance = null;
+        $salaryReport = null;
 
         if ($role === 'ADMIN') {
             $stats = [
@@ -107,6 +108,63 @@ class DashboardController extends Controller
                 ['label' => 'TOTAL EMPLOYEES', 'value' => (string) $totalEmployees, 'trend' => 'ALL REGISTERED', 'trendUp' => true],
                 ['label' => 'CHECKED IN NOW', 'value' => "{$checkedInCount} / {$totalEmployees}", 'trend' => 'ACTIVE ON SHIFT', 'trendUp' => true],
                 ['label' => $payrollLabel, 'value' => '£' . number_format($payrollEst, 2), 'trend' => 'ESTIMATED EARNINGS', 'trendUp' => false],
+            ];
+
+            $branchSpends = [];
+            $employeeSpends = [];
+            if ($business) {
+                $branchesList = Branch::where('business_id', $business->id)->get();
+                foreach ($branchesList as $b) {
+                    $branchSpends[$b->id] = [
+                        'name' => $b->name,
+                        'spend' => 0.0,
+                    ];
+                }
+
+                $employeesList = Employee::where('business_id', $business->id)->get();
+                foreach ($employeesList as $emp) {
+                    $employeeSpends[$emp->user_id] = [
+                        'name' => $emp->name,
+                        'spend' => 0.0,
+                    ];
+                }
+            }
+
+            if (isset($attendancesThisPeriod)) {
+                foreach ($attendancesThisPeriod as $att) {
+                    $rate = $att->user->employee->salary ?? 0;
+                    $spend = (($att->duration_minutes ?? 0) / 60) * $rate;
+                    if ($att->branch_id && isset($branchSpends[$att->branch_id])) {
+                        $branchSpends[$att->branch_id]['spend'] += $spend;
+                    }
+                    if (isset($employeeSpends[$att->user_id])) {
+                        $employeeSpends[$att->user_id]['spend'] += $spend;
+                    }
+                }
+            }
+
+            usort($branchSpends, function ($a, $b) {
+                return $b['spend'] <=> $a['spend'];
+            });
+
+            usort($employeeSpends, function ($a, $b) {
+                return $b['spend'] <=> $a['spend'];
+            });
+
+            $salaryReport = [
+                'total_business_spend' => round($payrollEst, 2),
+                'branch_spends' => array_map(function ($b) {
+                    return [
+                        'name' => $b['name'],
+                        'spend' => round($b['spend'], 2),
+                    ];
+                }, $branchSpends),
+                'employee_spends' => array_map(function ($e) {
+                    return [
+                        'name' => $e['name'],
+                        'spend' => round($e['spend'], 2),
+                    ];
+                }, $employeeSpends),
             ];
         } else {
             $employee = Employee::where('user_id', $user->id)->first();
@@ -189,7 +247,8 @@ class DashboardController extends Controller
             'filters' => [
                 'from_date' => $fromDate,
                 'to_date' => $toDate,
-            ]
+            ],
+            'salaryReport' => $salaryReport,
         ]);
     }
 }

@@ -201,4 +201,109 @@ test('dashboard stats and activities are filtered by custom date range', functio
     $this->assertCount(1, $activities['data']);
 });
 
+test('shop owner dashboard contains business-wise and branch-wise salary reports', function () {
+    $owner = User::factory()->create([
+        'role' => 'SHOP_OWNER',
+    ]);
+
+    $business = Business::create([
+        'user_id' => $owner->id,
+        'name' => 'Spend Business',
+        'address' => '123 Spend Rd',
+    ]);
+
+    $branchA = Branch::create([
+        'business_id' => $business->id,
+        'name' => 'Branch Alpha',
+        'address' => 'Alpha Rd',
+    ]);
+
+    $branchB = Branch::create([
+        'business_id' => $business->id,
+        'name' => 'Branch Beta',
+        'address' => 'Beta Rd',
+    ]);
+
+    $empUser = User::factory()->create([
+        'role' => 'EMPLOYEE',
+    ]);
+
+    Employee::create([
+        'business_id' => $business->id,
+        'user_id' => $empUser->id,
+        'name' => 'Salary Worker One',
+        'mobile' => '1234567890',
+        'designation' => 'Contractor',
+        'salary' => 10.00,
+        'is_active' => true,
+    ]);
+
+    $empUser2 = User::factory()->create([
+        'role' => 'EMPLOYEE',
+    ]);
+
+    Employee::create([
+        'business_id' => $business->id,
+        'user_id' => $empUser2->id,
+        'name' => 'Salary Worker Two',
+        'mobile' => '0987654321',
+        'designation' => 'Assistant',
+        'salary' => 5.00,
+        'is_active' => true,
+    ]);
+
+    // Worker One: Attendance at Branch Alpha (8 hours = £80.00)
+    Attendance::create([
+        'user_id' => $empUser->id,
+        'branch_id' => $branchA->id,
+        'clock_in_at' => '2026-06-05 09:00:00',
+        'clock_out_at' => '2026-06-05 17:00:00',
+        'duration_minutes' => 480,
+    ]);
+
+    // Worker One: Attendance at Branch Beta (4 hours = £40.00)
+    Attendance::create([
+        'user_id' => $empUser->id,
+        'branch_id' => $branchB->id,
+        'clock_in_at' => '2026-06-06 09:00:00',
+        'clock_out_at' => '2026-06-06 13:00:00',
+        'duration_minutes' => 240,
+    ]);
+
+    // Worker Two: Attendance at Branch Alpha (8 hours = £40.00)
+    Attendance::create([
+        'user_id' => $empUser2->id,
+        'branch_id' => $branchA->id,
+        'clock_in_at' => '2026-06-05 09:00:00',
+        'clock_out_at' => '2026-06-05 17:00:00',
+        'duration_minutes' => 480,
+    ]);
+
+    $response = $this->actingAs($owner)->get('/dashboard?from_date=2026-06-01&to_date=2026-06-10');
+
+    $response->assertOk();
+    $props = $response->original->getData()['page']['props'];
+
+    $this->assertArrayHasKey('salaryReport', $props);
+    $report = $props['salaryReport'];
+
+    $this->assertEquals(160.00, $report['total_business_spend']);
+    $this->assertCount(2, $report['branch_spends']);
+    $this->assertCount(2, $report['employee_spends']);
+
+    // Sorted descending by branch spend
+    $this->assertEquals('Branch Alpha', $report['branch_spends'][0]['name']);
+    $this->assertEquals(120.00, $report['branch_spends'][0]['spend']);
+
+    $this->assertEquals('Branch Beta', $report['branch_spends'][1]['name']);
+    $this->assertEquals(40.00, $report['branch_spends'][1]['spend']);
+
+    // Sorted descending by employee spend
+    $this->assertEquals('Salary Worker One', $report['employee_spends'][0]['name']);
+    $this->assertEquals(120.00, $report['employee_spends'][0]['spend']);
+
+    $this->assertEquals('Salary Worker Two', $report['employee_spends'][1]['name']);
+    $this->assertEquals(40.00, $report['employee_spends'][1]['spend']);
+});
+
 
