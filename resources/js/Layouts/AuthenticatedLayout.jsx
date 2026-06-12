@@ -31,6 +31,10 @@ const WorkedHoursIcon = ({ className = "w-5 h-5" }) => (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 );
 
+const ScheduleIcon = ({ className = "w-5 h-5" }) => (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+);
+
 const ProfileIcon = ({ className = "w-5 h-5" }) => (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
 );
@@ -62,6 +66,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 { name: 'DASHBOARD', route: 'dashboard', icon: DashboardIcon },
                 { name: 'BRANCHES', route: 'branches.index', icon: BusinessIcon },
                 { name: 'EMPLOYEES', route: 'employees.index', icon: EmployeeIcon },
+                { name: 'SCHEDULES', route: 'schedules.index', icon: ScheduleIcon },
                 { name: 'PAYROLL', route: 'payroll.index', icon: PayrollIcon },
                 { name: 'CONFIGURATIONS', route: 'configurations.index', icon: ConfigurationIcon },
                 { name: 'KNOWLEDGEBASE', route: 'knowledgebase.index', icon: KnowledgebaseIcon },
@@ -71,6 +76,7 @@ export default function AuthenticatedLayout({ header, children }) {
             // EMPLOYEE
             return [
                 { name: 'DASHBOARD', route: 'dashboard', icon: DashboardIcon },
+                { name: 'SCHEDULES', route: 'schedules.index', icon: ScheduleIcon },
                 { name: 'WORKED HOURS', route: 'worked-hours.index', icon: WorkedHoursIcon },
                 { name: 'PAYROLL', route: 'payroll.index', icon: PayrollIcon },
                 { name: 'KNOWLEDGEBASE', route: 'knowledgebase.index', icon: KnowledgebaseIcon },
@@ -103,6 +109,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 ],
                 hasMore: true,
                 moreLinks: [
+                    { name: 'Schedules', route: 'schedules.index', icon: ScheduleIcon },
                     { name: 'Branches', route: 'branches.index', icon: BusinessIcon },
                     { name: 'Configurations', route: 'configurations.index', icon: ConfigurationIcon },
                     { name: 'Knowledgebase', route: 'knowledgebase.index', icon: KnowledgebaseIcon },
@@ -119,6 +126,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 ],
                 hasMore: true,
                 moreLinks: [
+                    { name: 'Schedules', route: 'schedules.index', icon: ScheduleIcon },
                     { name: 'Knowledgebase', route: 'knowledgebase.index', icon: KnowledgebaseIcon },
                 ]
             };

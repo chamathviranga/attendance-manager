@@ -8,6 +8,7 @@ use App\Http\Controllers\BranchesController;
 use App\Http\Controllers\KnowledgebaseController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\LegalDocumentController;
+use App\Http\Controllers\ShiftScheduleController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -39,6 +40,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('employees', EmployeeController::class);
 
     Route::resource('branches', BranchesController::class);
+
+    Route::resource('schedules', ShiftScheduleController::class);
 
     Route::get('/configurations', [ConfigurationController::class, 'index'])->name('configurations.index');
     Route::put('/configurations', [ConfigurationController::class, 'update'])->name('configurations.update');

@@ -47,4 +47,9 @@ class Employee extends Model
         return $this->hasMany(LegalDocument::class);
     }
 
+    public function schedules()
+    {
+        return $this->hasMany(ShiftSchedule::class);
+    }
+
 }

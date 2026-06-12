@@ -41,6 +41,39 @@ class AttendanceController extends Controller
             return redirect()->back()->withErrors(['error' => 'You are already clocked in.']);
         }
 
+        // Enforce scheduling rules if scheduling is active for this business
+        $schedulingActive = \App\Models\ShiftSchedule::where('business_id', $employee->business_id)->exists();
+        if ($schedulingActive) {
+            $today = Carbon::today()->toDateString();
+            $schedule = \App\Models\ShiftSchedule::where('employee_id', $employee->id)
+                ->where('date', $today)
+                ->first();
+
+            if (!$schedule) {
+                return redirect()->back()->withErrors(['error' => 'You are not scheduled to work today.']);
+            }
+
+            if ($schedule->status !== 'Scheduled') {
+                return redirect()->back()->withErrors(['error' => "You cannot clock in. Your shift status is: {$schedule->status}."]);
+            }
+
+            $now = Carbon::now();
+            $startTime = Carbon::parse($today . ' ' . $schedule->start_time)->subMinutes(30);
+            $endTime = Carbon::parse($today . ' ' . $schedule->end_time);
+
+            if ($endTime->lessThanOrEqualTo($startTime)) {
+                $endTime->addDay();
+            }
+
+            if ($now->lessThan($startTime)) {
+                return redirect()->back()->withErrors(['error' => 'It is too early to clock in. Your shift starts at ' . Carbon::parse($schedule->start_time)->format('H:i')]);
+            }
+
+            if ($now->greaterThan($endTime)) {
+                return redirect()->back()->withErrors(['error' => 'Your scheduled shift has already ended at ' . Carbon::parse($schedule->end_time)->format('H:i')]);
+            }
+        }
+
         Attendance::create([
             'user_id' => $user->id,
             'branch_id' => $branch->id,
@@ -100,6 +133,18 @@ class AttendanceController extends Controller
         $branch = Branch::findOrFail($data['branch_id']);
         if ($branch->business_id != $employee->business_id || !$branch->is_active) {
             abort(403, 'Invalid or inactive branch.');
+        }
+
+        // Block manual entry if scheduling is active and a schedule exists for this date
+        $schedulingActive = \App\Models\ShiftSchedule::where('business_id', $employee->business_id)->exists();
+        if ($schedulingActive) {
+            $hasSchedule = \App\Models\ShiftSchedule::where('employee_id', $employee->id)
+                ->where('date', $data['date'])
+                ->exists();
+
+            if ($hasSchedule) {
+                return redirect()->back()->withErrors(['error' => 'You cannot enter a manual shift for this date because it is already scheduled. Please contact your shop owner.']);
+            }
         }
 
         $clockIn = Carbon::parse($data['date'] . ' ' . $data['clock_in_time']);
