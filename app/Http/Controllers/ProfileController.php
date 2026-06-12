@@ -50,6 +50,10 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
+        if ($request->user()->role === 'EMPLOYEE') {
+            abort(403, 'Unauthorized action. Profile settings are controlled by the shop owner.');
+        }
+
         $request->user()->fill($request->validated());
 
         if ($request->user()->isDirty('email')) {
@@ -66,6 +70,10 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        if ($request->user()->role === 'EMPLOYEE') {
+            abort(403, 'Unauthorized action. Profile settings are controlled by the shop owner.');
+        }
+
         $request->validate([
             'password' => ['required', 'current_password'],
         ]);

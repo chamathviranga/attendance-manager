@@ -20,17 +20,21 @@ export default function Edit({ mustVerifyEmail, status, documents = [] }) {
 
             <div className="py-6">
                 <div className="mx-auto max-w-7xl space-y-6 sm:px-6 lg:px-8">
-                    <div className="bg-[#1E1E1E] border border-[#2C2C2C] p-4 sm:p-8">
-                        <UpdateProfileInformationForm
-                            mustVerifyEmail={mustVerifyEmail}
-                            status={status}
-                            className="max-w-xl"
-                        />
-                    </div>
+                    {user.role !== 'EMPLOYEE' && (
+                        <div className="bg-[#1E1E1E] border border-[#2C2C2C] p-4 sm:p-8">
+                            <UpdateProfileInformationForm
+                                mustVerifyEmail={mustVerifyEmail}
+                                status={status}
+                                className="max-w-xl"
+                            />
+                        </div>
+                    )}
 
-                    <div className="bg-[#1E1E1E] border border-[#2C2C2C] p-4 sm:p-8">
-                        <UpdatePasswordForm className="max-w-xl" />
-                    </div>
+                    {user.role !== 'EMPLOYEE' && (
+                        <div className="bg-[#1E1E1E] border border-[#2C2C2C] p-4 sm:p-8">
+                            <UpdatePasswordForm className="max-w-xl" />
+                        </div>
+                    )}
 
                     {user.role === 'EMPLOYEE' && (
                         <div className="bg-[#1E1E1E] border border-[#2C2C2C] p-4 sm:p-8">
@@ -38,9 +42,11 @@ export default function Edit({ mustVerifyEmail, status, documents = [] }) {
                         </div>
                     )}
 
-                    <div className="bg-[#1E1E1E] border border-[#2C2C2C] p-4 sm:p-8">
-                        <DeleteUserForm className="max-w-xl" />
-                    </div>
+                    {user.role !== 'EMPLOYEE' && (
+                        <div className="bg-[#1E1E1E] border border-[#2C2C2C] p-4 sm:p-8">
+                            <DeleteUserForm className="max-w-xl" />
+                        </div>
+                    )}
                 </div>
             </div>
         </AuthenticatedLayout>
