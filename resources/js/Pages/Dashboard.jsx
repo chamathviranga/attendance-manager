@@ -159,7 +159,7 @@ export default function Dashboard({ stats = [], activities = [], branches = [], 
                                 type="date"
                                 value={fromDate}
                                 onChange={handleFromDateChange}
-                                className="w-full rounded-none border-[#2C2C2C] bg-[#121212] text-white text-[11px] py-1.5 px-3 focus:border-indigo-500 focus:ring-0 uppercase tracking-wider font-bold"
+                                className="w-full rounded-none border-[#2C2C2C] bg-[#121212] text-white text-xs py-3 px-4 focus:border-indigo-500 focus:ring-0 uppercase tracking-wider font-bold font-mono"
                             />
                         </div>
                         <div className="w-full sm:w-40">
@@ -168,7 +168,7 @@ export default function Dashboard({ stats = [], activities = [], branches = [], 
                                 type="date"
                                 value={toDate}
                                 onChange={handleToDateChange}
-                                className="w-full rounded-none border-[#2C2C2C] bg-[#121212] text-white text-[11px] py-1.5 px-3 focus:border-indigo-500 focus:ring-0 uppercase tracking-wider font-bold"
+                                className="w-full rounded-none border-[#2C2C2C] bg-[#121212] text-white text-xs py-3 px-4 focus:border-indigo-500 focus:ring-0 uppercase tracking-wider font-bold font-mono"
                             />
                         </div>
                         <button
@@ -178,7 +178,7 @@ export default function Dashboard({ stats = [], activities = [], branches = [], 
                                     preserveScroll: true,
                                 });
                             }}
-                            className="bg-[#121212] hover:bg-[#2C2C2C] text-gray-400 hover:text-white font-bold text-[9px] tracking-widest uppercase py-2.5 px-4 border border-[#2C2C2C] transition-colors"
+                            className="bg-[#121212] hover:bg-[#2C2C2C] text-gray-400 hover:text-white font-bold text-xs tracking-widest uppercase py-3 px-6 border border-[#2C2C2C] transition-colors"
                         >
                             Reset
                         </button>

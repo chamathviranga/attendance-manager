@@ -204,14 +204,14 @@ export default function Index({
                         <div className="flex gap-4 w-full lg:w-auto">
                             <button
                                 type="submit"
-                                className="flex-1 lg:flex-initial bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs tracking-widest uppercase py-3.5 px-8 transition-colors rounded-none"
+                                className="flex-1 lg:flex-initial bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs tracking-widest uppercase py-3 px-6 transition-colors rounded-none"
                             >
                                 Filter
                             </button>
                             <button
                                 type="button"
                                 onClick={handleReset}
-                                className="flex-1 lg:flex-initial border border-[#2C2C2C] hover:bg-[#2C2C2C] text-white font-bold text-xs tracking-widest uppercase py-3.5 px-8 transition-colors rounded-none"
+                                className="flex-1 lg:flex-initial border border-[#2C2C2C] hover:bg-[#2C2C2C] text-white font-bold text-xs tracking-widest uppercase py-3 px-6 transition-colors rounded-none"
                             >
                                 Reset
                             </button>
