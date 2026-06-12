@@ -27,6 +27,8 @@ export default function Index({ business }) {
         default_hourly_rate: business.default_hourly_rate || '10.00',
         apply_to_all_employees: false,
         logo: null,
+        payroll_cycle: business.payroll_cycle || 'weekly',
+        payroll_pay_day: business.payroll_pay_day || 'Sunday',
         _method: 'PUT',
     });
 
@@ -155,6 +157,75 @@ export default function Index({ business }) {
                                     <span className="ms-2 text-xs text-[#A0A0A0] uppercase tracking-widest font-bold">Apply this default hourly rate to all current employees</span>
                                 </label>
                                 <InputError message={errors.apply_to_all_employees} className="mt-1" />
+                            </div>
+                        </div>
+
+                        {/* Payroll Settings Section */}
+                        <div className="pt-6 border-t border-[#2C2C2C] space-y-6">
+                            <div>
+                                <h4 className="text-xs text-white font-bold tracking-widest uppercase">Payroll Cycle Configuration</h4>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Configure when salaries are calculated and paid</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div>
+                                    <InputLabel htmlFor="payroll_cycle" value="Salary Payment Cycle *" className="text-[#A0A0A0] text-xs uppercase tracking-widest" />
+                                    <select
+                                        id="payroll_cycle"
+                                        value={data.payroll_cycle}
+                                        onChange={(e) => {
+                                            const cycle = e.target.value;
+                                            setData(prev => ({
+                                                ...prev,
+                                                payroll_cycle: cycle,
+                                                payroll_pay_day: cycle === 'weekly' ? 'Sunday' : cycle === 'monthly' ? '1' : ''
+                                            }));
+                                        }}
+                                        className="mt-2 block w-full bg-[#121212] border border-[#2C2C2C] text-white rounded-none focus:border-indigo-500 focus:ring-0 text-xs py-3 px-4 font-sans"
+                                        required
+                                    >
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                        <option value="daily">Daily</option>
+                                    </select>
+                                    <InputError message={errors.payroll_cycle} className="mt-1" />
+                                </div>
+
+                                {data.payroll_cycle !== 'daily' && (
+                                    <div>
+                                        <InputLabel htmlFor="payroll_pay_day" value="Payment Due Day / Date *" className="text-[#A0A0A0] text-xs uppercase tracking-widest" />
+                                        {data.payroll_cycle === 'weekly' ? (
+                                            <select
+                                                id="payroll_pay_day"
+                                                value={data.payroll_pay_day}
+                                                onChange={(e) => setData('payroll_pay_day', e.target.value)}
+                                                className="mt-2 block w-full bg-[#121212] border border-[#2C2C2C] text-white rounded-none focus:border-indigo-500 focus:ring-0 text-xs py-3 px-4 font-sans"
+                                                required
+                                            >
+                                                <option value="Sunday">Sunday</option>
+                                                <option value="Monday">Monday</option>
+                                                <option value="Tuesday">Tuesday</option>
+                                                <option value="Wednesday">Wednesday</option>
+                                                <option value="Thursday">Thursday</option>
+                                                <option value="Friday">Friday</option>
+                                                <option value="Saturday">Saturday</option>
+                                            </select>
+                                        ) : (
+                                            <select
+                                                id="payroll_pay_day"
+                                                value={data.payroll_pay_day}
+                                                onChange={(e) => setData('payroll_pay_day', e.target.value)}
+                                                className="mt-2 block w-full bg-[#121212] border border-[#2C2C2C] text-white rounded-none focus:border-indigo-500 focus:ring-0 text-xs py-3 px-4 font-sans"
+                                                required
+                                            >
+                                                {Array.from({ length: 31 }, (_, i) => i + 1).map(dayNum => (
+                                                    <option key={dayNum} value={String(dayNum)}>{dayNum}</option>
+                                                ))}
+                                            </select>
+                                        )}
+                                        <InputError message={errors.payroll_pay_day} className="mt-1" />
+                                    </div>
+                                )}
                             </div>
                         </div>
 

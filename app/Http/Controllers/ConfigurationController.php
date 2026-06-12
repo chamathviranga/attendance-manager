@@ -41,13 +41,17 @@ class ConfigurationController extends Controller implements HasMiddleware
             'default_hourly_rate' => 'required|numeric|min:0',
             'apply_to_all_employees' => 'nullable|boolean',
             'logo' => 'nullable|image|max:2048',
+            'payroll_cycle' => 'required|string|in:weekly,monthly,daily',
+            'payroll_pay_day' => 'nullable|string',
         ]);
 
         $updateData = [
             'name' => $data['name'],
-            'mobile' => $data['mobile'],
-            'address' => $data['address'],
+            'mobile' => $data['mobile'] ?? null,
+            'address' => $data['address'] ?? null,
             'default_hourly_rate' => $data['default_hourly_rate'],
+            'payroll_cycle' => $data['payroll_cycle'],
+            'payroll_pay_day' => $data['payroll_cycle'] === 'daily' ? null : ($data['payroll_pay_day'] ?? null),
         ];
 
         if ($request->hasFile('logo')) {

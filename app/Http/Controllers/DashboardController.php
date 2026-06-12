@@ -19,14 +19,24 @@ class DashboardController extends Controller
         $user = $request->user();
         $role = $user->role;
 
-        // Date range filters (default to current week)
-        $fromDate = $request->input('from_date', Carbon::now()->startOfWeek()->toDateString());
-        $toDate = $request->input('to_date', Carbon::now()->endOfWeek()->toDateString());
+        $business = null;
+        if ($role === 'SHOP_OWNER') {
+            $business = Business::where('user_id', $user->id)->first();
+        } elseif ($role === 'EMPLOYEE') {
+            $employee = Employee::where('user_id', $user->id)->first();
+            $business = $employee ? $employee->business : null;
+        }
+
+        [$defaultStart, $defaultEnd] = $this->getPayrollDateRange($business);
+
+        // Date range filters (default to current week/period)
+        $fromDate = $request->input('from_date', $defaultStart->toDateString());
+        $toDate = $request->input('to_date', $defaultEnd->toDateString());
 
         $startDateTime = Carbon::parse($fromDate)->startOfDay();
         $endDateTime = Carbon::parse($toDate)->endOfDay();
 
-        $isDefaultWeek = ($fromDate === Carbon::now()->startOfWeek()->toDateString() && $toDate === Carbon::now()->endOfWeek()->toDateString());
+        $isDefaultWeek = ($fromDate === $defaultStart->toDateString() && $toDate === $defaultEnd->toDateString());
 
         $stats = [];
         $activities = [];
@@ -102,7 +112,8 @@ class DashboardController extends Controller
                 }
             }
 
-            $payrollLabel = $isDefaultWeek ? 'EST. PAYROLL (WEEK)' : 'EST. PAYROLL (PERIOD)';
+            $cycle = $business->payroll_cycle ?? 'weekly';
+            $payrollLabel = $isDefaultWeek ? ('EST. PAYROLL (' . strtoupper($cycle) . ')') : 'EST. PAYROLL (PERIOD)';
 
             $stats = [
                 ['label' => 'TOTAL EMPLOYEES', 'value' => (string) $totalEmployees, 'trend' => 'ALL REGISTERED', 'trendUp' => true],
@@ -212,8 +223,9 @@ class DashboardController extends Controller
                 }
             }
 
-            $hoursLabel = $isDefaultWeek ? 'WORKED (WEEK)' : 'WORKED (PERIOD)';
-            $earningsLabel = $isDefaultWeek ? 'EST. EARNINGS' : 'EST. EARNINGS (PERIOD)';
+            $cycle = ($employee && $employee->business) ? ($employee->business->payroll_cycle ?? 'weekly') : 'weekly';
+            $hoursLabel = $isDefaultWeek ? ('WORKED (' . strtoupper($cycle) . ')') : 'WORKED (PERIOD)';
+            $earningsLabel = $isDefaultWeek ? ('EST. EARNINGS (' . strtoupper($cycle) . ')') : 'EST. EARNINGS (PERIOD)';
 
             $leaveBalance = $employee->leave_balance ?? 0;
             $stats = [

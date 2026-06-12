@@ -71,7 +71,7 @@ test('shop owner can view dashboard and payroll estimate calculations', function
     $this->assertEquals('CHECKED IN NOW', $stats[1]['label']);
     $this->assertEquals('0 / 1', $stats[1]['value']);
     
-    $this->assertEquals('EST. PAYROLL (WEEK)', $stats[2]['label']);
+    $this->assertEquals('EST. PAYROLL (WEEKLY)', $stats[2]['label']);
     $this->assertEquals('£120.00', $stats[2]['value']);
 });
 
@@ -304,6 +304,169 @@ test('shop owner dashboard contains business-wise and branch-wise salary reports
 
     $this->assertEquals('Salary Worker Two', $report['employee_spends'][1]['name']);
     $this->assertEquals(40.00, $report['employee_spends'][1]['spend']);
+});
+
+test('shop owner can update business payroll configuration', function () {
+    $owner = User::factory()->create([
+        'role' => 'SHOP_OWNER',
+    ]);
+
+    $business = Business::create([
+        'user_id' => $owner->id,
+        'name' => 'Config Business',
+        'address' => '123 Config Rd',
+        'payroll_cycle' => 'weekly',
+        'payroll_pay_day' => 'Sunday',
+    ]);
+
+    $response = $this->actingAs($owner)->put('/configurations', [
+        'name' => 'Updated Business Name',
+        'default_hourly_rate' => 12.50,
+        'payroll_cycle' => 'monthly',
+        'payroll_pay_day' => '10',
+    ]);
+
+    $response->assertRedirect(route('configurations.index'));
+    
+    $business->refresh();
+    $this->assertEquals('monthly', $business->payroll_cycle);
+    $this->assertEquals('10', $business->payroll_pay_day);
+});
+
+test('dashboard filters correctly by dynamic weekly payroll cycle', function () {
+    $owner = User::factory()->create([
+        'role' => 'SHOP_OWNER',
+    ]);
+
+    // Set payroll day to Wednesday
+    $business = Business::create([
+        'user_id' => $owner->id,
+        'name' => 'Weekly Wednesday Business',
+        'payroll_cycle' => 'weekly',
+        'payroll_pay_day' => 'Wednesday',
+    ]);
+
+    $branch = Branch::create([
+        'business_id' => $business->id,
+        'name' => 'Main Branch',
+    ]);
+
+    $employeeUser = User::factory()->create([
+        'role' => 'EMPLOYEE',
+    ]);
+
+    $employee = Employee::create([
+        'business_id' => $business->id,
+        'user_id' => $employeeUser->id,
+        'name' => 'Test Employee',
+        'salary' => 10.00,
+        'mobile' => '07123456789',
+        'designation' => 'Staff Member',
+    ]);
+
+    // Let's travel to a known Wednesday
+    Carbon\Carbon::setTestNow(Carbon\Carbon::parse('2026-06-10 12:00:00')); // Wednesday
+
+    // Under Wednesday pay day, the current pay period starts on Wednesday 2026-06-10 and ends Tuesday 2026-06-16.
+    // Let's create an attendance inside this period (e.g. Wednesday 2026-06-10 14:00 to 18:00 = 4 hours = £40.00)
+    Attendance::create([
+        'user_id' => $employeeUser->id,
+        'branch_id' => $branch->id,
+        'clock_in_at' => '2026-06-10 14:00:00',
+        'clock_out_at' => '2026-06-10 18:00:00',
+        'duration_minutes' => 240,
+    ]);
+
+    // And another attendance outside (e.g. Tuesday 2026-06-09 14:00 to 18:00 - this was in the previous period ending on Tuesday 2026-06-09)
+    Attendance::create([
+        'user_id' => $employeeUser->id,
+        'branch_id' => $branch->id,
+        'clock_in_at' => '2026-06-09 14:00:00',
+        'clock_out_at' => '2026-06-09 18:00:00',
+        'duration_minutes' => 240,
+    ]);
+
+    $response = $this->actingAs($owner)->get('/dashboard');
+
+    $response->assertOk();
+    $props = $response->original->getData()['page']['props'];
+
+    $this->assertEquals('2026-06-10', $props['filters']['from_date']);
+    $this->assertEquals('2026-06-16', $props['filters']['to_date']);
+
+    $stats = $props['stats'];
+    $this->assertEquals('EST. PAYROLL (WEEKLY)', $stats[2]['label']);
+    $this->assertEquals('£40.00', $stats[2]['value']);
+
+    Carbon\Carbon::setTestNow(); // Reset time travel
+});
+
+test('dashboard filters correctly by dynamic monthly payroll cycle', function () {
+    $owner = User::factory()->create([
+        'role' => 'SHOP_OWNER',
+    ]);
+
+    // Set payroll day to 10th of the month
+    $business = Business::create([
+        'user_id' => $owner->id,
+        'name' => 'Monthly Business',
+        'payroll_cycle' => 'monthly',
+        'payroll_pay_day' => '10',
+    ]);
+
+    $branch = Branch::create([
+        'business_id' => $business->id,
+        'name' => 'Main Branch',
+    ]);
+
+    $employeeUser = User::factory()->create([
+        'role' => 'EMPLOYEE',
+    ]);
+
+    $employee = Employee::create([
+        'business_id' => $business->id,
+        'user_id' => $employeeUser->id,
+        'name' => 'Test Employee',
+        'salary' => 10.00,
+        'mobile' => '07123456789',
+        'designation' => 'Staff Member',
+    ]);
+
+    // Travel to 2026-06-15.
+    // Period containing June 15th is June 10th to July 9th.
+    Carbon\Carbon::setTestNow(Carbon\Carbon::parse('2026-06-15 12:00:00'));
+
+    // Shift in period: June 12th (8 hours = £80.00)
+    Attendance::create([
+        'user_id' => $employeeUser->id,
+        'branch_id' => $branch->id,
+        'clock_in_at' => '2026-06-12 09:00:00',
+        'clock_out_at' => '2026-06-12 17:00:00',
+        'duration_minutes' => 480,
+    ]);
+
+    // Shift outside period: June 5th
+    Attendance::create([
+        'user_id' => $employeeUser->id,
+        'branch_id' => $branch->id,
+        'clock_in_at' => '2026-06-05 09:00:00',
+        'clock_out_at' => '2026-06-05 17:00:00',
+        'duration_minutes' => 480,
+    ]);
+
+    $response = $this->actingAs($owner)->get('/dashboard');
+
+    $response->assertOk();
+    $props = $response->original->getData()['page']['props'];
+
+    $this->assertEquals('2026-06-10', $props['filters']['from_date']);
+    $this->assertEquals('2026-07-09', $props['filters']['to_date']);
+
+    $stats = $props['stats'];
+    $this->assertEquals('EST. PAYROLL (MONTHLY)', $stats[2]['label']);
+    $this->assertEquals('£80.00', $stats[2]['value']);
+
+    Carbon\Carbon::setTestNow(); // Reset time travel
 });
 
 

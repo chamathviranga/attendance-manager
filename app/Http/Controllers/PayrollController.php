@@ -17,9 +17,18 @@ class PayrollController extends Controller
         $user = $request->user();
         $role = $user->role;
 
-        // Default to current week (Monday to Sunday)
-        $startDateStr = $request->query('start_date', Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString());
-        $endDateStr = $request->query('end_date', Carbon::now()->endOfWeek(Carbon::SUNDAY)->toDateString());
+        $business = null;
+        if ($role === 'SHOP_OWNER') {
+            $business = Business::where('user_id', $user->id)->first();
+        } else {
+            $employee = Employee::where('user_id', $user->id)->first();
+            $business = $employee ? $employee->business : null;
+        }
+
+        [$defaultStart, $defaultEnd] = $this->getPayrollDateRange($business);
+
+        $startDateStr = $request->query('start_date', $defaultStart->toDateString());
+        $endDateStr = $request->query('end_date', $defaultEnd->toDateString());
 
         $startDate = Carbon::parse($startDateStr)->startOfDay();
         $endDate = Carbon::parse($endDateStr)->endOfDay();
@@ -56,29 +65,41 @@ class PayrollController extends Controller
             }
 
             $weeklyBreakdown = [];
-            $groupedByWeek = $attendances->groupBy(function ($att) {
-                return $att->clock_in_at->copy()->endOfWeek(Carbon::SUNDAY)->toDateString();
-            });
+            $groupedPeriods = [];
 
-            foreach ($groupedByWeek as $sundayDate => $weekAtts) {
-                $weekMinutes = $weekAtts->sum('duration_minutes');
-                $weekHours = round($weekMinutes / 60, 2);
-                $weekEarnings = round($weekHours * $hourlyRate, 2);
-                $mondayDate = Carbon::parse($sundayDate)->startOfWeek(Carbon::MONDAY)->toDateString();
+            foreach ($attendances as $att) {
+                [$startPeriod, $endPeriod] = $this->getPayrollPeriodForDate($att->clock_in_at, $business);
+                $key = $startPeriod->toDateString() . '_' . $endPeriod->toDateString();
+                
+                if (!isset($groupedPeriods[$key])) {
+                    $groupedPeriods[$key] = [
+                        'start' => $startPeriod->toDateString(),
+                        'end' => $endPeriod->toDateString(),
+                        'atts' => collect(),
+                    ];
+                }
+                $groupedPeriods[$key]['atts']->push($att);
+            }
 
-                $allCleared = $weekAtts->every('is_cleared', true);
+            foreach ($groupedPeriods as $period) {
+                $periodAtts = $period['atts'];
+                $periodMinutes = $periodAtts->sum('duration_minutes');
+                $periodHours = round($periodMinutes / 60, 2);
+                $periodEarnings = round($periodHours * $hourlyRate, 2);
+
+                $allCleared = $periodAtts->every('is_cleared', true);
 
                 if ($allCleared) {
                     $status = 'Cleared';
                 } else {
-                    $status = Carbon::parse($sundayDate)->endOfDay()->isPast() ? 'Unpaid' : 'Pending';
+                    $status = Carbon::parse($period['end'])->endOfDay()->isPast() ? 'Unpaid' : 'Pending';
                 }
 
                 $weeklyBreakdown[] = [
-                    'week_start' => $mondayDate,
-                    'week_end' => $sundayDate,
-                    'hours' => $weekHours,
-                    'earnings' => $weekEarnings,
+                    'week_start' => $period['start'],
+                    'week_end' => $period['end'],
+                    'hours' => $periodHours,
+                    'earnings' => $periodEarnings,
                     'status' => $status,
                 ];
             }
@@ -92,6 +113,8 @@ class PayrollController extends Controller
                 'dailyBreakdown' => $dailyBreakdown,
                 'weeklyBreakdown' => $weeklyBreakdown,
                 'hourlyRate' => $hourlyRate,
+                'payrollCycle' => $business->payroll_cycle ?? 'weekly',
+                'payrollPayDay' => $business->payroll_pay_day ?? 'Sunday',
             ]);
         } elseif ($role === 'SHOP_OWNER') {
             $business = Business::where('user_id', $user->id)->first();
@@ -161,6 +184,8 @@ class PayrollController extends Controller
                     'end_date' => $endDateStr,
                 ],
                 'employeeSummaries' => $employeeSummaries,
+                'payrollCycle' => $business->payroll_cycle ?? 'weekly',
+                'payrollPayDay' => $business->payroll_pay_day ?? 'Sunday',
             ]);
         }
 

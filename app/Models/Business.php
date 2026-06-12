@@ -17,6 +17,8 @@ class Business extends Model
         'mobile',
         'status',
         'default_hourly_rate',
+        'payroll_cycle',
+        'payroll_pay_day',
     ];
 
     // relations
