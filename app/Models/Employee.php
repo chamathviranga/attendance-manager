@@ -16,6 +16,7 @@ class Employee extends Model
         'mobile',
         'designation',
         'salary',
+        'leave_balance',
         'address',
         'is_active',
     ];

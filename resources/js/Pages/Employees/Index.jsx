@@ -29,6 +29,7 @@ export default function Index({ employees, businessId, defaultHourlyRate }) {
         mobile: '',
         designation: '',
         salary: defaultHourlyRate || '',
+        leave_balance: 12,
         address: '',
         is_active: true,
     });
@@ -40,6 +41,7 @@ export default function Index({ employees, businessId, defaultHourlyRate }) {
         mobile: '',
         designation: '',
         salary: '',
+        leave_balance: 12,
         address: '',
         is_active: true,
     });
@@ -63,7 +65,17 @@ export default function Index({ employees, businessId, defaultHourlyRate }) {
 
     const openCreateModal = () => {
         reset();
-        setData('salary', defaultHourlyRate || '');
+        setData({
+            name: '',
+            email: '',
+            password: '',
+            mobile: '',
+            designation: '',
+            salary: defaultHourlyRate || '',
+            leave_balance: 12,
+            address: '',
+            is_active: true,
+        });
         setIsCreating(true);
     };
 
@@ -82,6 +94,7 @@ export default function Index({ employees, businessId, defaultHourlyRate }) {
             mobile: employee.mobile || '',
             designation: employee.designation || '',
             salary: employee.salary || '',
+            leave_balance: employee.leave_balance !== undefined && employee.leave_balance !== null ? employee.leave_balance : 12,
             address: employee.address || '',
             is_active: !!employee.is_active,
         });
@@ -211,6 +224,10 @@ export default function Index({ employees, businessId, defaultHourlyRate }) {
                                                     <span className="font-bold text-gray-500 tracking-widest uppercase text-[10px]">Hourly Rate</span> 
                                                     <span className="text-white">{employee.salary ? `£${employee.salary}/hr` : 'N/A'}</span>
                                                 </p>
+                                                <p className="flex justify-between">
+                                                    <span className="font-bold text-gray-500 tracking-widest uppercase text-[10px]">Leave Balance</span> 
+                                                    <span className="text-white">{employee.leave_balance !== null && employee.leave_balance !== undefined ? `${employee.leave_balance} Days` : '12 Days'}</span>
+                                                </p>
                                             </div>
                                             <div className="mt-5 flex gap-0 border border-[#2C2C2C]">
                                                 <button 
@@ -246,6 +263,7 @@ export default function Index({ employees, businessId, defaultHourlyRate }) {
                                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Email</th>
                                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Mobile</th>
                                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Hourly Rate</th>
+                                                <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Leave Balance</th>
                                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
                                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Actions</th>
                                             </tr>
@@ -258,6 +276,7 @@ export default function Index({ employees, businessId, defaultHourlyRate }) {
                                                     <td className="px-6 py-4 whitespace-nowrap text-gray-400">{employee.user?.email || 'N/A'}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-gray-400">{employee.mobile}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-gray-400">{employee.salary ? `£${employee.salary}/hr` : 'N/A'}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-gray-400">{employee.leave_balance !== null && employee.leave_balance !== undefined ? `${employee.leave_balance} Days` : '12 Days'}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <span className={`px-2 py-0.5 text-[10px] font-bold tracking-widest uppercase border ${employee.is_active ? 'text-indigo-400 border-indigo-500/50' : 'text-red-400 border-red-500/50'}`}>
                                                             {employee.is_active ? 'Active' : 'Inactive'}
@@ -360,6 +379,18 @@ export default function Index({ employees, businessId, defaultHourlyRate }) {
                                 onChange={(e) => setData('salary', e.target.value)}
                             />
                             <InputError message={errors.salary} className="mt-1" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="leave_balance" value="Leave Balance (Days)" className="text-[#A0A0A0] text-xs uppercase tracking-widest" />
+                            <TextInput
+                                id="leave_balance"
+                                type="number"
+                                value={data.leave_balance}
+                                className="mt-2 block w-full bg-[#121212] border border-[#2C2C2C] text-white rounded-none focus:border-indigo-500 focus:ring-0"
+                                onChange={(e) => setData('leave_balance', e.target.value)}
+                            />
+                            <InputError message={errors.leave_balance} className="mt-1" />
                         </div>
 
                         <div className="sm:col-span-2">
@@ -481,6 +512,18 @@ export default function Index({ employees, businessId, defaultHourlyRate }) {
                                 onChange={(e) => editForm.setData('salary', e.target.value)}
                             />
                             <InputError message={editForm.errors.salary} className="mt-1" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="edit_leave_balance" value="Leave Balance (Days)" className="text-[#A0A0A0] text-xs uppercase tracking-widest" />
+                            <TextInput
+                                id="edit_leave_balance"
+                                type="number"
+                                value={editForm.data.leave_balance}
+                                className="mt-2 block w-full bg-[#121212] border border-[#2C2C2C] text-white rounded-none focus:border-indigo-500 focus:ring-0"
+                                onChange={(e) => editForm.setData('leave_balance', e.target.value)}
+                            />
+                            <InputError message={editForm.errors.leave_balance} className="mt-1" />
                         </div>
 
                         <div className="sm:col-span-2">

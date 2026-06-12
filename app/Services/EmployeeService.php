@@ -37,6 +37,7 @@ class EmployeeService
                 'mobile' => $data['mobile'],
                 'designation' => $data['designation'],
                 'salary' => $data['salary'] ?? null,
+                'leave_balance' => $data['leave_balance'] ?? 12,
                 'address' => $data['address'] ?? null,
                 'is_active' => $data['is_active'] ?? true,
             ]);
@@ -53,6 +54,7 @@ class EmployeeService
                 'mobile' => $data['mobile'] ?? $employee->mobile,
                 'designation' => $data['designation'] ?? $employee->designation,
                 'salary' => $data['salary'] ?? $employee->salary,
+                'leave_balance' => $data['leave_balance'] ?? $employee->leave_balance,
                 'address' => $data['address'] ?? $employee->address,
                 'is_active' => isset($data['is_active']) ? $data['is_active'] : $employee->is_active,
             ]);

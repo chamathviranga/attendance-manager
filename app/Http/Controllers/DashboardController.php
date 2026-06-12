@@ -157,9 +157,10 @@ class DashboardController extends Controller
             $hoursLabel = $isDefaultWeek ? 'WORKED (WEEK)' : 'WORKED (PERIOD)';
             $earningsLabel = $isDefaultWeek ? 'EST. EARNINGS' : 'EST. EARNINGS (PERIOD)';
 
+            $leaveBalance = $employee->leave_balance ?? 0;
             $stats = [
                 ['label' => $hoursLabel, 'value' => "{$periodHours}h", 'trend' => 'TOTAL HOURS RECORDED', 'trendUp' => true],
-                ['label' => 'LEAVE BALANCE', 'value' => '12 DAYS', 'trend' => 'STANDARD ANNUAL', 'trendUp' => true],
+                ['label' => 'LEAVE BALANCE', 'value' => "{$leaveBalance} DAYS", 'trend' => 'STANDARD ANNUAL', 'trendUp' => true],
                 ['label' => $earningsLabel, 'value' => '£' . number_format($estEarnings, 2), 'trend' => 'ESTIMATED PAY PERIOD', 'trendUp' => true],
             ];
         }

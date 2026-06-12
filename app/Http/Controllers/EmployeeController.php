@@ -63,6 +63,7 @@ class EmployeeController extends Controller implements HasMiddleware
             'mobile' => 'required|string|max:15',
             'designation' => 'required|string|max:255',
             'salary' => 'nullable|numeric|min:0',
+            'leave_balance' => 'nullable|integer|min:0',
             'address' => 'nullable|string|max:500',
             'is_active' => 'nullable|boolean',
         ]);
@@ -83,6 +84,7 @@ class EmployeeController extends Controller implements HasMiddleware
             'mobile' => 'required|string|max:15',
             'designation' => 'required|string|max:255',
             'salary' => 'nullable|numeric|min:0',
+            'leave_balance' => 'nullable|integer|min:0',
             'address' => 'nullable|string|max:500',
             'is_active' => 'nullable|boolean',
         ]);
