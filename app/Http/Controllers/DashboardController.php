@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Carbon\Carbon;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class DashboardController extends Controller
 {
@@ -66,7 +67,6 @@ class DashboardController extends Controller
                         $q->where('business_id', $business->id);
                     })
                     ->orderBy('clock_in_at', 'desc')
-                    ->limit(10)
                     ->get();
 
                 foreach ($recentAttendances as $att) {
@@ -122,7 +122,6 @@ class DashboardController extends Controller
                 $recentAttendances = Attendance::with('branch')
                     ->where('user_id', $user->id)
                     ->orderBy('clock_in_at', 'desc')
-                    ->limit(10)
                     ->get();
 
                 foreach ($recentAttendances as $att) {
@@ -152,9 +151,25 @@ class DashboardController extends Controller
             ];
         }
 
+        $perPage = 5;
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $offset = ($currentPage - 1) * $perPage;
+        $currentPageItems = array_slice($activities, $offset, $perPage);
+
+        $paginatedActivities = new LengthAwarePaginator(
+            $currentPageItems,
+            count($activities),
+            $perPage,
+            $currentPage,
+            [
+                'path' => LengthAwarePaginator::resolveCurrentPath(),
+                'query' => $request->query(),
+            ]
+        );
+
         return Inertia::render('Dashboard', [
             'stats' => $stats,
-            'activities' => $activities,
+            'activities' => $paginatedActivities,
             'branches' => $branches,
             'activeAttendance' => $activeAttendance,
         ]);

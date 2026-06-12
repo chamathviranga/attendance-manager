@@ -7,6 +7,7 @@ import AttendanceFab from '@/Components/AttendanceFab';
 export default function Dashboard({ stats = [], activities = [], branches = [], activeAttendance = null }) {
     const user = usePage().props.auth.user;
     const role = user?.role || 'EMPLOYEE';
+    const activitiesData = Array.isArray(activities) ? activities : (activities?.data || []);
 
     // State for selected branch (clock-in)
     const [selectedBranchId, setSelectedBranchId] = useState('');
@@ -192,11 +193,11 @@ export default function Dashboard({ stats = [], activities = [], branches = [], 
                         <h4 className="text-xs text-white font-bold tracking-widest uppercase">Recent Activity</h4>
                     </div>
 
-                    {activities && activities.length > 0 ? (
+                    {activitiesData && activitiesData.length > 0 ? (
                         <>
                             {/* Mobile View: Cards */}
                             <div className="sm:hidden grid grid-cols-1 divide-y divide-[#2C2C2C]">
-                                {activities.map((activity, i) => (
+                                {activitiesData.map((activity, i) => (
                                     <div key={i} className="p-4 bg-[#1E1E1E]">
                                         <div className="flex justify-between items-start mb-2">
                                             <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">{activity.date}</span>
@@ -220,7 +221,7 @@ export default function Dashboard({ stats = [], activities = [], branches = [], 
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-[#2C2C2C] bg-[#1E1E1E]">
-                                        {activities.map((activity, i) => (
+                                        {activitiesData.map((activity, i) => (
                                             <tr key={i} className="hover:bg-[#2C2C2C] transition-colors">
                                                 <td className="px-6 py-4 whitespace-nowrap text-gray-400 text-xs tracking-widest uppercase">{activity.date}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-white text-sm font-bold tracking-wide uppercase">{activity.event}</td>
@@ -234,6 +235,49 @@ export default function Dashboard({ stats = [], activities = [], branches = [], 
                                     </tbody>
                                 </table>
                             </div>
+
+                            {/* Pagination Links */}
+                            {activities.links && activities.total > activities.per_page && (
+                                <div className="p-4 border-t border-[#2C2C2C] flex flex-col sm:flex-row items-center justify-between gap-4">
+                                    <div className="text-[10px] text-gray-500 uppercase tracking-widest">
+                                        Showing {activities.from} to {activities.to} of {activities.total} entries
+                                    </div>
+                                    <div className="flex flex-wrap gap-1">
+                                        {activities.links.map((link, idx) => {
+                                            let label = link.label;
+                                            if (label.includes('Previous')) {
+                                                label = 'Previous';
+                                            } else if (label.includes('Next')) {
+                                                label = 'Next';
+                                            }
+
+                                            if (!link.url) {
+                                                return (
+                                                    <span
+                                                        key={idx}
+                                                        className="text-gray-600 font-bold uppercase tracking-widest text-[10px] border border-gray-800/10 px-3 py-2 cursor-not-allowed"
+                                                        dangerouslySetInnerHTML={{ __html: label }}
+                                                    />
+                                                );
+                                            }
+
+                                            return (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
+                                                    disabled={link.active}
+                                                    className={`font-bold uppercase tracking-widest text-[10px] px-3 py-2 transition-colors border ${
+                                                        link.active
+                                                            ? 'bg-indigo-600 text-white border-indigo-600'
+                                                            : 'text-gray-400 hover:text-white border-gray-500/30 hover:bg-[#2C2C2C]'
+                                                    }`}
+                                                    dangerouslySetInnerHTML={{ __html: label }}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </>
                     ) : (
                         <div className="p-12 text-center text-gray-400 text-xs uppercase tracking-widest">
