@@ -115,6 +115,7 @@ class PayrollController extends Controller
                 'hourlyRate' => $hourlyRate,
                 'payrollCycle' => $business->payroll_cycle ?? 'weekly',
                 'payrollPayDay' => $business->payroll_pay_day ?? 'Sunday',
+                'generatePayslip' => (bool)($employee->generate_payslip ?? true),
             ]);
         } elseif ($role === 'SHOP_OWNER') {
             $business = Business::where('user_id', $user->id)->first();
@@ -173,6 +174,7 @@ class PayrollController extends Controller
                         'owed_earnings' => round($owedEarnings, 2),
                         'shifts_count' => $empAtts->count(),
                         'shifts' => $shifts,
+                        'generate_payslip' => (bool)($emp->generate_payslip ?? true),
                     ];
                 }
             }
@@ -267,6 +269,10 @@ class PayrollController extends Controller
             abort(403, 'Unauthorized.');
         }
 
+        if (!$employee->generate_payslip) {
+            abort(403, 'Payslip generation is disabled for this employee.');
+        }
+
         // 3. Fetch Business Details
         $business = Business::find($employee->business_id);
         $businessName = $business ? $business->name : 'Attendance Mark Partner';
@@ -325,6 +331,7 @@ class PayrollController extends Controller
             'totalHours' => round($totalHours, 2),
             'totalEarnings' => round($totalEarnings, 2),
             'hourlyRate' => number_format($hourlyRate, 2),
+            'unbranded' => (bool)$employee->unbranded_payslip,
         ]);
 
         return $pdf->stream('payslip-' . str_replace(' ', '-', strtolower($employee->name)) . '-' . $startDate->format('Ymd') . '.pdf');

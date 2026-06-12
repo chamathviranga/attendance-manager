@@ -40,6 +40,9 @@ class EmployeeService
                 'leave_balance' => $data['leave_balance'] ?? 12,
                 'address' => $data['address'] ?? null,
                 'is_active' => $data['is_active'] ?? true,
+                'is_paying_tax' => isset($data['is_paying_tax']) ? (bool)$data['is_paying_tax'] : true,
+                'generate_payslip' => isset($data['generate_payslip']) ? (bool)$data['generate_payslip'] : true,
+                'unbranded_payslip' => isset($data['unbranded_payslip']) ? (bool)$data['unbranded_payslip'] : false,
             ]);
         });
     }
@@ -56,7 +59,10 @@ class EmployeeService
                 'salary' => $data['salary'] ?? $employee->salary,
                 'leave_balance' => $data['leave_balance'] ?? $employee->leave_balance,
                 'address' => $data['address'] ?? $employee->address,
-                'is_active' => isset($data['is_active']) ? $data['is_active'] : $employee->is_active,
+                'is_active' => isset($data['is_active']) ? (bool)$data['is_active'] : $employee->is_active,
+                'is_paying_tax' => isset($data['is_paying_tax']) ? (bool)$data['is_paying_tax'] : $employee->is_paying_tax,
+                'generate_payslip' => isset($data['generate_payslip']) ? (bool)$data['generate_payslip'] : $employee->generate_payslip,
+                'unbranded_payslip' => isset($data['unbranded_payslip']) ? (bool)$data['unbranded_payslip'] : $employee->unbranded_payslip,
             ]);
 
             if ($employee->user) {

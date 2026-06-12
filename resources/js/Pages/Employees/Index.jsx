@@ -32,6 +32,9 @@ export default function Index({ employees, businessId, defaultHourlyRate }) {
         leave_balance: 12,
         address: '',
         is_active: true,
+        is_paying_tax: true,
+        generate_payslip: true,
+        unbranded_payslip: false,
     });
 
     const editForm = useForm({
@@ -44,6 +47,9 @@ export default function Index({ employees, businessId, defaultHourlyRate }) {
         leave_balance: 12,
         address: '',
         is_active: true,
+        is_paying_tax: true,
+        generate_payslip: true,
+        unbranded_payslip: false,
     });
 
     const [isCreating, setIsCreating] = useState(false);
@@ -97,6 +103,9 @@ export default function Index({ employees, businessId, defaultHourlyRate }) {
             leave_balance: employee.leave_balance !== undefined && employee.leave_balance !== null ? employee.leave_balance : 12,
             address: employee.address || '',
             is_active: !!employee.is_active,
+            is_paying_tax: employee.is_paying_tax !== undefined && employee.is_paying_tax !== null ? !!employee.is_paying_tax : true,
+            generate_payslip: employee.generate_payslip !== undefined && employee.generate_payslip !== null ? !!employee.generate_payslip : true,
+            unbranded_payslip: employee.unbranded_payslip !== undefined && employee.unbranded_payslip !== null ? !!employee.unbranded_payslip : false,
         });
         setIsEditing(true);
     };
@@ -228,6 +237,7 @@ export default function Index({ employees, businessId, defaultHourlyRate }) {
                                                     <span className="font-bold text-gray-500 tracking-widest uppercase text-[10px]">Leave Balance</span> 
                                                     <span className="text-white">{employee.leave_balance !== null && employee.leave_balance !== undefined ? `${employee.leave_balance} Days` : '12 Days'}</span>
                                                 </p>
+
                                             </div>
                                             <div className="mt-5 flex gap-0 border border-[#2C2C2C]">
                                                 <button 
@@ -264,6 +274,7 @@ export default function Index({ employees, businessId, defaultHourlyRate }) {
                                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Mobile</th>
                                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Hourly Rate</th>
                                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Leave Balance</th>
+
                                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
                                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Actions</th>
                                             </tr>
@@ -277,6 +288,7 @@ export default function Index({ employees, businessId, defaultHourlyRate }) {
                                                     <td className="px-6 py-4 whitespace-nowrap text-gray-400">{employee.mobile}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-gray-400">{employee.salary ? `£${employee.salary}/hr` : 'N/A'}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-gray-400">{employee.leave_balance !== null && employee.leave_balance !== undefined ? `${employee.leave_balance} Days` : '12 Days'}</td>
+
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <span className={`px-2 py-0.5 text-[10px] font-bold tracking-widest uppercase border ${employee.is_active ? 'text-indigo-400 border-indigo-500/50' : 'text-red-400 border-red-500/50'}`}>
                                                             {employee.is_active ? 'Active' : 'Inactive'}
@@ -402,6 +414,58 @@ export default function Index({ employees, businessId, defaultHourlyRate }) {
                                 onChange={(e) => setData('address', e.target.value)}
                             />
                             <InputError message={errors.address} className="mt-1" />
+                        </div>
+                    </div>
+
+                    <h2 className="text-xs tracking-widest uppercase font-bold text-indigo-400 mt-10 mb-6 border-b border-[#2C2C2C] pb-3">
+                        Payroll & Tax Settings
+                    </h2>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        <div>
+                            <label className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    name="is_paying_tax"
+                                    checked={data.is_paying_tax}
+                                    onChange={(e) => setData('is_paying_tax', e.target.checked)}
+                                    className="bg-[#121212] border-[#2C2C2C] text-indigo-600 focus:ring-0 rounded-none w-5 h-5"
+                                />
+                                <span className="ms-2 text-xs text-[#A0A0A0] uppercase tracking-widest font-bold font-sans">Paying Tax</span>
+                            </label>
+                            <span className="block mt-1 text-[10px] text-gray-500 uppercase">Unchecked means Cash in Hand</span>
+                            <InputError message={errors.is_paying_tax} className="mt-1" />
+                        </div>
+
+                        <div>
+                            <label className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    name="generate_payslip"
+                                    checked={data.generate_payslip}
+                                    onChange={(e) => setData('generate_payslip', e.target.checked)}
+                                    className="bg-[#121212] border-[#2C2C2C] text-indigo-600 focus:ring-0 rounded-none w-5 h-5"
+                                />
+                                <span className="ms-2 text-xs text-[#A0A0A0] uppercase tracking-widest font-bold font-sans">Generate Payslip</span>
+                            </label>
+                            <span className="block mt-1 text-[10px] text-gray-500 uppercase">Enables PDF generation</span>
+                            <InputError message={errors.generate_payslip} className="mt-1" />
+                        </div>
+
+                        <div>
+                            <label className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    name="unbranded_payslip"
+                                    checked={data.unbranded_payslip}
+                                    onChange={(e) => setData('unbranded_payslip', e.target.checked)}
+                                    className="bg-[#121212] border-[#2C2C2C] text-indigo-600 focus:ring-0 rounded-none w-5 h-5"
+                                    disabled={!data.generate_payslip}
+                                />
+                                <span className={`ms-2 text-xs uppercase tracking-widest font-bold font-sans ${data.generate_payslip ? 'text-[#A0A0A0]' : 'text-gray-600'}`}>Unbranded Payslip</span>
+                            </label>
+                            <span className="block mt-1 text-[10px] text-gray-500 uppercase">No shop details or identity</span>
+                            <InputError message={errors.unbranded_payslip} className="mt-1" />
                         </div>
                     </div>
 
@@ -549,6 +613,58 @@ export default function Index({ employees, businessId, defaultHourlyRate }) {
                                 <span className="ms-2 text-xs text-[#A0A0A0] uppercase tracking-widest font-bold">Employee is Active</span>
                             </label>
                             <InputError message={editForm.errors.is_active} className="mt-1" />
+                        </div>
+                    </div>
+
+                    <h2 className="text-xs tracking-widest uppercase font-bold text-indigo-400 mt-10 mb-6 border-b border-[#2C2C2C] pb-3">
+                        Edit Payroll & Tax Settings
+                    </h2>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        <div>
+                            <label className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    name="is_paying_tax"
+                                    checked={editForm.data.is_paying_tax}
+                                    onChange={(e) => editForm.setData('is_paying_tax', e.target.checked)}
+                                    className="bg-[#121212] border-[#2C2C2C] text-indigo-600 focus:ring-0 rounded-none w-5 h-5"
+                                />
+                                <span className="ms-2 text-xs text-[#A0A0A0] uppercase tracking-widest font-bold font-sans">Paying Tax</span>
+                            </label>
+                            <span className="block mt-1 text-[10px] text-gray-500 uppercase">Unchecked means Cash in Hand</span>
+                            <InputError message={editForm.errors.is_paying_tax} className="mt-1" />
+                        </div>
+
+                        <div>
+                            <label className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    name="generate_payslip"
+                                    checked={editForm.data.generate_payslip}
+                                    onChange={(e) => editForm.setData('generate_payslip', e.target.checked)}
+                                    className="bg-[#121212] border-[#2C2C2C] text-indigo-600 focus:ring-0 rounded-none w-5 h-5"
+                                />
+                                <span className="ms-2 text-xs text-[#A0A0A0] uppercase tracking-widest font-bold font-sans">Generate Payslip</span>
+                            </label>
+                            <span className="block mt-1 text-[10px] text-gray-500 uppercase">Enables PDF generation</span>
+                            <InputError message={editForm.errors.generate_payslip} className="mt-1" />
+                        </div>
+
+                        <div>
+                            <label className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    name="unbranded_payslip"
+                                    checked={editForm.data.unbranded_payslip}
+                                    onChange={(e) => editForm.setData('unbranded_payslip', e.target.checked)}
+                                    className="bg-[#121212] border-[#2C2C2C] text-indigo-600 focus:ring-0 rounded-none w-5 h-5"
+                                    disabled={!editForm.data.generate_payslip}
+                                />
+                                <span className={`ms-2 text-xs uppercase tracking-widest font-bold font-sans ${editForm.data.generate_payslip ? 'text-[#A0A0A0]' : 'text-gray-600'}`}>Unbranded Payslip</span>
+                            </label>
+                            <span className="block mt-1 text-[10px] text-gray-500 uppercase">No shop details or identity</span>
+                            <InputError message={editForm.errors.unbranded_payslip} className="mt-1" />
                         </div>
                     </div>
 

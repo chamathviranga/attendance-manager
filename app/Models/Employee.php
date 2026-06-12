@@ -19,6 +19,16 @@ class Employee extends Model
         'leave_balance',
         'address',
         'is_active',
+        'is_paying_tax',
+        'generate_payslip',
+        'unbranded_payslip',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'is_paying_tax' => 'boolean',
+        'generate_payslip' => 'boolean',
+        'unbranded_payslip' => 'boolean',
     ];
 
     // relations

@@ -11,7 +11,8 @@ export default function Index({
     dailyBreakdown = [], 
     weeklyBreakdown = [], 
     hourlyRate = 0,
-    employeeSummaries = [] 
+    employeeSummaries = [],
+    generatePayslip = true
 }) {
     const user = usePage().props.auth.user;
     const [startDate, setStartDate] = useState(filters.start_date || '');
@@ -274,7 +275,7 @@ export default function Index({
                                                     <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Hours: {week.hours.toFixed(2)}h</span>
                                                     <span className="text-white font-black">£{week.earnings.toFixed(2)}</span>
                                                 </div>
-                                                {week.status === 'Cleared' && (
+                                                {week.status === 'Cleared' && generatePayslip && (
                                                     <div className="pt-2">
                                                         <a
                                                             href={route('payroll.payslip', {
@@ -331,18 +332,22 @@ export default function Index({
                                                         </td>
                                                         <td className="p-4 text-xs font-bold text-right tracking-wider">
                                                             {week.status === 'Cleared' ? (
-                                                                <a
-                                                                    href={route('payroll.payslip', {
-                                                                        employee_id: user.id,
-                                                                        start_date: week.week_start,
-                                                                        end_date: week.week_end
-                                                                    })}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="text-indigo-400 hover:text-indigo-300 hover:underline text-[10px] font-bold uppercase tracking-widest border border-indigo-500/30 px-3 py-1.5 hover:bg-indigo-950/10 transition-colors"
-                                                                >
-                                                                    Paysheet PDF
-                                                                </a>
+                                                                generatePayslip ? (
+                                                                    <a
+                                                                        href={route('payroll.payslip', {
+                                                                            employee_id: user.id,
+                                                                            start_date: week.week_start,
+                                                                            end_date: week.week_end
+                                                                        })}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="text-indigo-400 hover:text-indigo-300 hover:underline text-[10px] font-bold uppercase tracking-widest border border-indigo-500/30 px-3 py-1.5 hover:bg-indigo-950/10 transition-colors"
+                                                                    >
+                                                                        Paysheet PDF
+                                                                    </a>
+                                                                ) : (
+                                                                    <span className="text-gray-600 text-[10px] uppercase tracking-widest">Unavailable</span>
+                                                                )
                                                             ) : (
                                                                 <span className="text-gray-600 text-[10px] uppercase tracking-widest">Not Cleared</span>
                                                             )}
@@ -698,7 +703,7 @@ export default function Index({
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
-                            {filteredModalShifts.some(s => s.is_cleared) && (
+                            {filteredModalShifts.some(s => s.is_cleared) && selectedEmpForShifts?.generate_payslip && (
                                 <a
                                     href={route('payroll.payslip', {
                                         employee_id: selectedEmpForShifts.employee_id,

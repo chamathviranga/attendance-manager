@@ -66,6 +66,9 @@ class EmployeeController extends Controller implements HasMiddleware
             'leave_balance' => 'nullable|integer|min:0',
             'address' => 'nullable|string|max:500',
             'is_active' => 'nullable|boolean',
+            'is_paying_tax' => 'nullable|boolean',
+            'generate_payslip' => 'nullable|boolean',
+            'unbranded_payslip' => 'nullable|boolean',
         ]);
 
         $this->employeeService->createEmployee($data, $businessId);
@@ -87,6 +90,9 @@ class EmployeeController extends Controller implements HasMiddleware
             'leave_balance' => 'nullable|integer|min:0',
             'address' => 'nullable|string|max:500',
             'is_active' => 'nullable|boolean',
+            'is_paying_tax' => 'nullable|boolean',
+            'generate_payslip' => 'nullable|boolean',
+            'unbranded_payslip' => 'nullable|boolean',
         ]);
 
         $this->employeeService->updateEmployee($id, $data);
