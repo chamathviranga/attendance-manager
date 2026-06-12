@@ -18,6 +18,48 @@ export default function Index({
     const [endDate, setEndDate] = useState(filters.end_date || '');
     const [selectedEmpForShifts, setSelectedEmpForShifts] = useState(null);
     const [selectedEmpIds, setSelectedEmpIds] = useState([]);
+    const [paymentStatusFilter, setPaymentStatusFilter] = useState('All');
+
+    // Filtering logic
+    const filteredWeeklyBreakdown = weeklyBreakdown.filter(week => {
+        if (paymentStatusFilter === 'Paid') {
+            return week.status === 'Cleared';
+        }
+        if (paymentStatusFilter === 'Unpaid') {
+            return week.status === 'Unpaid' || week.status === 'Pending';
+        }
+        return true;
+    });
+
+    const filteredDailyBreakdown = dailyBreakdown.filter(day => {
+        if (paymentStatusFilter === 'Paid') {
+            return day.is_cleared;
+        }
+        if (paymentStatusFilter === 'Unpaid') {
+            return !day.is_cleared;
+        }
+        return true;
+    });
+
+    const filteredEmployeeSummaries = employeeSummaries.filter(emp => {
+        if (paymentStatusFilter === 'Paid') {
+            return emp.owed_earnings === 0;
+        }
+        if (paymentStatusFilter === 'Unpaid') {
+            return emp.owed_earnings > 0;
+        }
+        return true;
+    });
+
+    const filteredModalShifts = (selectedEmpForShifts?.shifts || []).filter(shift => {
+        if (paymentStatusFilter === 'Paid') {
+            return shift.is_cleared;
+        }
+        if (paymentStatusFilter === 'Unpaid') {
+            return !shift.is_cleared;
+        }
+        return true;
+    });
 
     const handleFilter = (e) => {
         e.preventDefault();
@@ -71,7 +113,7 @@ export default function Index({
         );
     };
 
-    const unclearedEmps = employeeSummaries.filter(emp => emp.owed_earnings > 0);
+    const unclearedEmps = filteredEmployeeSummaries.filter(emp => emp.owed_earnings > 0);
     const toggleSelectAll = () => {
         if (selectedEmpIds.length === unclearedEmps.length) {
             setSelectedEmpIds([]);
@@ -95,6 +137,7 @@ export default function Index({
 
         setStartDate(start);
         setEndDate(end);
+        setPaymentStatusFilter('All');
 
         router.get(route('payroll.index'), {
             start_date: start,
@@ -102,11 +145,11 @@ export default function Index({
         });
     };
 
-    const totalHours = dailyBreakdown.reduce((sum, item) => sum + item.hours, 0);
-    const totalEarnings = dailyBreakdown.reduce((sum, item) => sum + item.earnings, 0);
+    const totalHours = filteredDailyBreakdown.reduce((sum, item) => sum + item.hours, 0);
+    const totalEarnings = filteredDailyBreakdown.reduce((sum, item) => sum + item.earnings, 0);
 
-    const ownerTotalPayout = employeeSummaries.reduce((sum, item) => sum + item.total_earnings, 0);
-    const ownerTotalHours = employeeSummaries.reduce((sum, item) => sum + item.total_hours, 0);
+    const ownerTotalPayout = filteredEmployeeSummaries.reduce((sum, item) => sum + item.total_earnings, 0);
+    const ownerTotalHours = filteredEmployeeSummaries.reduce((sum, item) => sum + item.total_hours, 0);
 
     return (
         <AuthenticatedLayout
@@ -123,7 +166,7 @@ export default function Index({
                 {/* Date Filter Panel */}
                 <div className="bg-[#1E1E1E] border border-[#2C2C2C] p-4 sm:p-6">
                     <form onSubmit={handleFilter} className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1">
                             <div>
                                 <InputLabel value="From Date" className="mb-2" />
                                 <TextInput
@@ -143,6 +186,18 @@ export default function Index({
                                     className="w-full font-mono uppercase tracking-wider text-xs"
                                     required
                                 />
+                            </div>
+                            <div>
+                                <InputLabel value="Payment Status" className="mb-2" />
+                                <select
+                                    value={paymentStatusFilter}
+                                    onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                                    className="w-full rounded-none border-[#2C2C2C] bg-[#121212] text-white text-xs py-3 px-4 focus:border-indigo-500 focus:ring-0 uppercase tracking-wider font-bold"
+                                >
+                                    <option value="All">All Statuses</option>
+                                    <option value="Paid">Cleared / Paid</option>
+                                    <option value="Unpaid">Unpaid / Owed</option>
+                                </select>
                             </div>
                         </div>
 
@@ -194,11 +249,11 @@ export default function Index({
                                 <p className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-widest mt-1">Payments resolve and clear every Sunday</p>
                             </div>
 
-                            {weeklyBreakdown.length > 0 ? (
+                            {filteredWeeklyBreakdown.length > 0 ? (
                                 <>
                                     {/* Mobile View: Cards */}
                                     <div className="sm:hidden divide-y divide-[#2C2C2C]">
-                                        {weeklyBreakdown.map((week, idx) => (
+                                        {filteredWeeklyBreakdown.map((week, idx) => (
                                             <div key={idx} className="p-4 space-y-3">
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Week Ending Sunday</span>
@@ -253,7 +308,7 @@ export default function Index({
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-[#2C2C2C] text-gray-300">
-                                                {weeklyBreakdown.map((week, idx) => (
+                                                {filteredWeeklyBreakdown.map((week, idx) => (
                                                     <tr key={idx} className="hover:bg-[#252525] transition-colors">
                                                         <td className="p-4 text-xs font-mono uppercase tracking-wider">
                                                             {new Date(week.week_start).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -312,12 +367,16 @@ export default function Index({
                                 <p className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-widest mt-1">Detailed list of shifts and dynamic daily pay calculations</p>
                             </div>
 
-                            {dailyBreakdown.length > 0 ? (
+                            {filteredDailyBreakdown.length > 0 ? (
                                 <>
                                     {/* Mobile View: Cards */}
                                     <div className="sm:hidden divide-y divide-[#2C2C2C]">
-                                        {dailyBreakdown.map((day) => (
-                                            <div key={day.id} className="p-4 space-y-2">
+                                        {filteredDailyBreakdown.map((day) => (
+                                            <div key={day.id} className={`p-4 space-y-2 ${
+                                                !day.is_cleared
+                                                    ? 'bg-rose-950/10 border-l-4 border-rose-500 text-rose-200'
+                                                    : 'text-gray-300'
+                                            }`}>
                                                 <div className="flex justify-between items-center">
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-[10px] text-white font-black uppercase tracking-wider">{day.branch_name}</span>
@@ -358,8 +417,12 @@ export default function Index({
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-[#2C2C2C] text-gray-300">
-                                                {dailyBreakdown.map((day) => (
-                                                    <tr key={day.id} className="hover:bg-[#252525] transition-colors">
+                                                {filteredDailyBreakdown.map((day) => (
+                                                    <tr key={day.id} className={`transition-colors ${
+                                                        !day.is_cleared
+                                                            ? 'bg-rose-950/10 hover:bg-rose-950/20 border-l-2 border-rose-500/50 text-rose-200'
+                                                            : 'hover:bg-[#252525]'
+                                                    }`}>
                                                         <td className="p-4 text-xs font-bold text-white uppercase tracking-wider">
                                                             {day.branch_name}
                                                         </td>
@@ -425,7 +488,7 @@ export default function Index({
                                             Clear Selected Payments
                                         </div>
                                         <div className="text-[10px] text-gray-400 uppercase tracking-widest mt-0.5">
-                                            Selected: <span className="text-white font-bold">{selectedEmpIds.length}</span> employee(s) • Total Owed: <span className="text-emerald-400 font-bold">£{employeeSummaries
+                                            Selected: <span className="text-white font-bold">{selectedEmpIds.length}</span> employee(s) • Total Owed: <span className="text-emerald-400 font-bold">£{filteredEmployeeSummaries
                                                 .filter(emp => selectedEmpIds.includes(emp.employee_id))
                                                 .reduce((sum, emp) => sum + emp.owed_earnings, 0)
                                                 .toFixed(2)}</span>
@@ -451,11 +514,11 @@ export default function Index({
                                 </div>
                             </div>
 
-                            {employeeSummaries.length > 0 ? (
+                            {filteredEmployeeSummaries.length > 0 ? (
                                 <>
                                     {/* Mobile View: Cards */}
                                     <div className="sm:hidden divide-y divide-[#2C2C2C]">
-                                        {employeeSummaries.map((emp) => {
+                                        {filteredEmployeeSummaries.map((emp) => {
                                             const isSelected = selectedEmpIds.includes(emp.employee_id);
                                             const isUncleared = emp.owed_earnings > 0;
                                             return (
@@ -472,7 +535,7 @@ export default function Index({
                                                             ) : (
                                                                 <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" title="Fully Cleared">
                                                                     ✓
-                                                                </span>
+                                                                 </span>
                                                             )}
                                                             <div>
                                                                 <h4 className="text-xs font-bold text-white uppercase tracking-wider">{emp.name}</h4>
@@ -555,7 +618,7 @@ export default function Index({
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-[#2C2C2C] text-gray-300">
-                                                {employeeSummaries.map((emp) => {
+                                                {filteredEmployeeSummaries.map((emp) => {
                                                     const isSelected = selectedEmpIds.includes(emp.employee_id);
                                                     const isUncleared = emp.owed_earnings > 0;
                                                     return (
@@ -635,12 +698,12 @@ export default function Index({
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
-                            {selectedEmpForShifts?.shifts?.some(s => s.is_cleared) && (
+                            {filteredModalShifts.some(s => s.is_cleared) && (
                                 <a
                                     href={route('payroll.payslip', {
                                         employee_id: selectedEmpForShifts.employee_id,
-                                        start_date: startDate || (selectedEmpForShifts?.shifts?.length > 0 ? selectedEmpForShifts.shifts[selectedEmpForShifts.shifts.length - 1].date : ''),
-                                        end_date: endDate || (selectedEmpForShifts?.shifts?.length > 0 ? selectedEmpForShifts.shifts[0].date : '')
+                                        start_date: startDate || (filteredModalShifts.length > 0 ? filteredModalShifts[filteredModalShifts.length - 1].date : ''),
+                                        end_date: endDate || (filteredModalShifts.length > 0 ? filteredModalShifts[0].date : '')
                                     })}
                                     target="_blank"
                                     rel="noopener noreferrer"
@@ -649,7 +712,7 @@ export default function Index({
                                     Download Paysheet PDF
                                 </a>
                             )}
-                            {selectedEmpForShifts?.shifts?.some(s => !s.is_cleared) && (
+                            {filteredModalShifts.some(s => !s.is_cleared) && (
                                 <button
                                     type="button"
                                     onClick={() => handleClearPayments([selectedEmpForShifts.employee_id])}
@@ -667,14 +730,20 @@ export default function Index({
                         </div>
                     </div>
 
-                    {selectedEmpForShifts?.shifts && selectedEmpForShifts.shifts.length > 0 ? (
+                    {filteredModalShifts.length > 0 ? (
                         <div className="bg-[#121212] border border-[#2C2C2C] max-h-[68vh] overflow-y-auto">
                             {/* Mobile list */}
                             <div className="block sm:hidden divide-y divide-[#2C2C2C]">
-                                {selectedEmpForShifts.shifts.map((shift) => (
+                                {filteredModalShifts.map((shift) => (
                                     <div 
                                         key={shift.id} 
-                                        className={`p-4 space-y-2 ${shift.is_sunday ? 'bg-amber-950/15 border-l-4 border-amber-500 text-amber-300' : 'text-gray-300'}`}
+                                        className={`p-4 space-y-2 ${
+                                            !shift.is_cleared
+                                                ? 'bg-rose-950/10 border-l-4 border-rose-500 text-rose-200'
+                                                : shift.is_sunday 
+                                                    ? 'bg-amber-950/15 border-l-4 border-amber-500 text-amber-300' 
+                                                    : 'text-gray-300'
+                                        }`}
                                     >
                                         <div className="flex justify-between items-center text-[10px]">
                                             <div className="flex items-center gap-2">
@@ -711,13 +780,15 @@ export default function Index({
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-[#2C2C2C] text-xs">
-                                        {selectedEmpForShifts.shifts.map((shift) => (
+                                        {filteredModalShifts.map((shift) => (
                                             <tr 
                                                 key={shift.id} 
                                                 className={`transition-colors ${
-                                                    shift.is_sunday 
-                                                        ? 'bg-amber-950/15 text-amber-300 font-bold hover:bg-amber-950/25 border-l-2 border-amber-500/50' 
-                                                        : 'text-gray-300 hover:bg-[#202020]'
+                                                    !shift.is_cleared
+                                                        ? 'bg-rose-950/10 text-rose-200 hover:bg-rose-950/20 border-l-2 border-rose-500/50'
+                                                        : shift.is_sunday 
+                                                            ? 'bg-amber-950/15 text-amber-300 font-bold hover:bg-amber-950/25 border-l-2 border-amber-500/50' 
+                                                            : 'text-gray-300 hover:bg-[#202020]'
                                                 }`}
                                             >
                                                 <td className="p-3 uppercase tracking-wider">{shift.branch_name}</td>
