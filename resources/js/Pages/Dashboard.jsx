@@ -41,14 +41,6 @@ export default function Dashboard({ stats = [], activities = [], branches = [], 
         });
     };
 
-    // State for selected branch (clock-in)
-    const [selectedBranchId, setSelectedBranchId] = useState('');
-
-    useEffect(() => {
-        if (branches.length > 0) {
-            setSelectedBranchId(branches[0].id.toString());
-        }
-    }, [branches]);
 
     // Active shift timer state
     const [elapsedTime, setElapsedTime] = useState('00:00:00');
@@ -78,42 +70,6 @@ export default function Dashboard({ stats = [], activities = [], branches = [], 
         return () => clearInterval(interval);
     }, [activeAttendance]);
 
-    const handleClockIn = (e) => {
-        e.preventDefault();
-        if (!selectedBranchId) {
-            Swal.fire({
-                title: 'Select Branch',
-                text: 'Please choose a branch to clock in.',
-                icon: 'warning',
-                background: '#1E1E1E',
-                color: '#ffffff',
-                confirmButtonColor: '#4f46e5',
-                customClass: {
-                    title: 'tracking-widest uppercase text-sm font-bold',
-                    confirmButton: 'rounded-none font-bold tracking-widest text-xs uppercase'
-                }
-            });
-            return;
-        }
-
-        router.post('/attendance/clock-in', {
-            branch_id: selectedBranchId
-        }, {
-            preserveScroll: true,
-            onSuccess: () => {
-                Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 3000,
-                    icon: 'success',
-                    title: 'Clocked in successfully!',
-                    background: '#1E1E1E',
-                    color: '#ffffff'
-                });
-            }
-        });
-    };
 
     const handleClockOut = (e) => {
         e.preventDefault();
@@ -208,32 +164,15 @@ export default function Dashboard({ stats = [], activities = [], branches = [], 
                                     </button>
                                 </div>
                             ) : (
-                                <form onSubmit={handleClockIn} className="flex flex-col sm:flex-row gap-4 w-full md:w-auto items-end">
-                                    <div className="w-full sm:w-64">
-                                        <label className="block text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-2">Select Branch</label>
-                                        <select
-                                            value={selectedBranchId}
-                                            onChange={(e) => setSelectedBranchId(e.target.value)}
-                                            className="w-full rounded-none border-[#2C2C2C] bg-[#121212] text-white text-xs py-3 px-4 focus:border-indigo-500 focus:ring-0 uppercase tracking-wider font-bold"
-                                        >
-                                            {branches.map((b) => (
-                                                <option key={b.id} value={b.id}>
-                                                    {b.name}
-                                                </option>
-                                            ))}
-                                            {branches.length === 0 && (
-                                                <option value="">No Active Branches Available</option>
-                                            )}
-                                        </select>
-                                    </div>
+                                <div className="flex w-full md:w-auto items-end">
                                     <button
-                                        type="submit"
-                                        disabled={branches.length === 0}
-                                        className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs tracking-widest uppercase py-3.5 px-8 transition-colors rounded-none disabled:opacity-50"
+                                        type="button"
+                                        onClick={() => window.dispatchEvent(new CustomEvent('open-attendance-modal'))}
+                                        className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs tracking-widest uppercase py-3.5 px-8 transition-colors rounded-none"
                                     >
-                                        Clock In
+                                        Log Attendance
                                     </button>
-                                </form>
+                                </div>
                             )}
                         </div>
                     </div>

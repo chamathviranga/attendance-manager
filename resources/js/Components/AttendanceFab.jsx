@@ -27,6 +27,12 @@ export default function AttendanceFab({ branches = [], activeAttendance = null }
         }
     }, [branches]);
 
+    useEffect(() => {
+        const handleOpenModal = () => setIsOpen(true);
+        window.addEventListener('open-attendance-modal', handleOpenModal);
+        return () => window.removeEventListener('open-attendance-modal', handleOpenModal);
+    }, []);
+
     // Timer calculation for active shift
     const [elapsedTime, setElapsedTime] = useState('00:00:00');
 
