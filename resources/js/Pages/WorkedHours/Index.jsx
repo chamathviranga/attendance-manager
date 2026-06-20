@@ -5,9 +5,7 @@ import AttendanceFab from '@/Components/AttendanceFab';
 export default function Index({ attendances = [], branches = [], activeAttendance = null }) {
     const formatDuration = (mins) => {
         if (mins === null || mins === undefined) return 'Active Shift';
-        const hrs = Math.floor(mins / 60);
-        const remainingMins = mins % 60;
-        return `${hrs}h ${remainingMins}m`;
+        return `${Number(mins / 60).toFixed(2)}h`;
     };
 
     return (

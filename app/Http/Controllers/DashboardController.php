@@ -78,7 +78,8 @@ class DashboardController extends Controller
 
                 foreach ($attendancesThisPeriod as $att) {
                     $rate = $att->user->employee->salary ?? 0;
-                    $payrollEst += (($att->duration_minutes ?? 0) / 60) * $rate;
+                    $hours = round(($att->duration_minutes ?? 0) / 60, 2);
+                    $payrollEst += round($hours * $rate, 2);
                 }
 
                 $recentAttendances = Attendance::with(['user', 'branch'])
@@ -190,18 +191,17 @@ class DashboardController extends Controller
                     ->whereNull('clock_out_at')
                     ->first();
                 
-                $periodMinutes = Attendance::where('user_id', $user->id)
-                    ->whereBetween('clock_in_at', [$startDateTime, $endDateTime])
-                    ->sum('duration_minutes') ?? 0;
-
-                $periodHours = round($periodMinutes / 60, 1);
-                $estEarnings = $periodHours * ($employee->salary ?? 0);
-
                 $recentAttendances = Attendance::with('branch')
                     ->where('user_id', $user->id)
                     ->whereBetween('clock_in_at', [$startDateTime, $endDateTime])
                     ->orderBy('clock_in_at', 'desc')
                     ->get();
+
+                foreach ($recentAttendances as $att) {
+                    $hours = round(($att->duration_minutes ?? 0) / 60, 2);
+                    $periodHours += $hours;
+                }
+                $estEarnings = round($periodHours * ($employee->salary ?? 0), 2);
 
                 foreach ($recentAttendances as $att) {
                     $branchName = $att->branch->name ?? 'Unknown';
@@ -229,7 +229,7 @@ class DashboardController extends Controller
 
             $leaveBalance = $employee->leave_balance ?? 0;
             $stats = [
-                ['label' => $hoursLabel, 'value' => "{$periodHours}h", 'trend' => 'TOTAL HOURS RECORDED', 'trendUp' => true],
+                ['label' => $hoursLabel, 'value' => number_format($periodHours, 2) . "h", 'trend' => 'TOTAL HOURS RECORDED', 'trendUp' => true],
                 ['label' => 'LEAVE BALANCE', 'value' => "{$leaveBalance} DAYS", 'trend' => 'STANDARD ANNUAL', 'trendUp' => true],
                 ['label' => $earningsLabel, 'value' => '£' . number_format($estEarnings, 2), 'trend' => 'ESTIMATED PAY PERIOD', 'trendUp' => true],
             ];

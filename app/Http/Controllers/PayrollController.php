@@ -83,9 +83,13 @@ class PayrollController extends Controller
 
             foreach ($groupedPeriods as $period) {
                 $periodAtts = $period['atts'];
-                $periodMinutes = $periodAtts->sum('duration_minutes');
-                $periodHours = round($periodMinutes / 60, 2);
-                $periodEarnings = round($periodHours * $hourlyRate, 2);
+                $periodHours = 0;
+                $periodEarnings = 0;
+                foreach ($periodAtts as $att) {
+                    $hours = round(($att->duration_minutes ?? 0) / 60, 2);
+                    $periodHours += $hours;
+                    $periodEarnings += round($hours * $hourlyRate, 2);
+                }
 
                 $allCleared = $periodAtts->every('is_cleared', true);
 
@@ -133,9 +137,8 @@ class PayrollController extends Controller
                         ->orderBy('clock_in_at', 'desc')
                         ->get();
 
-                    $totalMinutes = $empAtts->sum('duration_minutes');
-                    $totalHours = round($totalMinutes / 60, 2);
-                    $totalEarnings = round($totalHours * $empRate, 2);
+                    $totalHours = 0;
+                    $totalEarnings = 0;
 
                     $clearedEarnings = 0;
                     $owedEarnings = 0;
@@ -143,6 +146,9 @@ class PayrollController extends Controller
                     foreach ($empAtts as $att) {
                         $hours = round(($att->duration_minutes ?? 0) / 60, 2);
                         $earnings = round($hours * $empRate, 2);
+
+                        $totalHours += $hours;
+                        $totalEarnings += $earnings;
 
                         $shifts[] = [
                             'id' => $att->id,
