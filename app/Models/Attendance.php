@@ -29,4 +29,9 @@ class Attendance extends Model
     {
         return $this->belongsTo(Branch::class);
     }
+
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->format('c');
+    }
 }

@@ -104,6 +104,9 @@ class ShiftScheduleController extends Controller
             }
         }
 
+        $data['start_time'] = \Carbon\Carbon::parse($data['start_time'])->format('H:i:s');
+        $data['end_time'] = \Carbon\Carbon::parse($data['end_time'])->format('H:i:s');
+
         $startDate = \Carbon\Carbon::parse($data['date']);
         
         // Create first shift
@@ -193,6 +196,9 @@ class ShiftScheduleController extends Controller
                 abort(403, 'Invalid exchanged employee selection.');
             }
         }
+
+        $data['start_time'] = \Carbon\Carbon::parse($data['start_time'])->format('H:i:s');
+        $data['end_time'] = \Carbon\Carbon::parse($data['end_time'])->format('H:i:s');
 
         $schedule->update([
             'employee_id' => $data['employee_id'],

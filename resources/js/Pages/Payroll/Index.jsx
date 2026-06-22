@@ -1,6 +1,10 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import Swal from 'sweetalert2';
+import AttendanceFab from '@/Components/AttendanceFab';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import Modal from '@/Components/Modal';
@@ -20,6 +24,17 @@ export default function Index({
     const [selectedEmpForShifts, setSelectedEmpForShifts] = useState(null);
     const [selectedEmpIds, setSelectedEmpIds] = useState([]);
     const [paymentStatusFilter, setPaymentStatusFilter] = useState('All');
+
+    const formatTime12 = (time24) => {
+        if (!time24 || time24 === 'Active') return time24;
+        const parts = time24.split(':');
+        if (parts.length !== 2) return time24;
+        const [hours, minutes] = parts;
+        let h = parseInt(hours, 10);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        return `${h.toString().padStart(2, '0')}:${minutes} ${ampm}`;
+    };
 
     // Filtering logic
     const filteredWeeklyBreakdown = weeklyBreakdown.filter(week => {
@@ -66,7 +81,8 @@ export default function Index({
         e.preventDefault();
         router.get(route('payroll.index'), {
             start_date: startDate,
-            end_date: endDate
+            end_date: endDate,
+            payment_status: paymentStatusFilter !== 'All' ? paymentStatusFilter : undefined
         }, {
             preserveState: true,
             preserveScroll: true
@@ -170,21 +186,21 @@ export default function Index({
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1">
                             <div>
                                 <InputLabel value="From Date" className="mb-2" />
-                                <TextInput
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="w-full font-mono uppercase tracking-wider text-xs"
+                                <DatePicker
+                                    selected={startDate ? new Date(startDate) : null}
+                                    onChange={(date) => setStartDate(date ? date.toISOString().split('T')[0] : '')}
+                                    dateFormat="yyyy-MM-dd"
+                                    className="w-full rounded-none border-[#2C2C2C] bg-[#121212] text-white text-xs py-3 px-4 focus:border-indigo-500 focus:ring-0 uppercase tracking-wider font-mono"
                                     required
                                 />
                             </div>
                             <div>
                                 <InputLabel value="To Date" className="mb-2" />
-                                <TextInput
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full font-mono uppercase tracking-wider text-xs"
+                                <DatePicker
+                                    selected={endDate ? new Date(endDate) : null}
+                                    onChange={(date) => setEndDate(date ? date.toISOString().split('T')[0] : '')}
+                                    dateFormat="yyyy-MM-dd"
+                                    className="w-full rounded-none border-[#2C2C2C] bg-[#121212] text-white text-xs py-3 px-4 focus:border-indigo-500 focus:ring-0 uppercase tracking-wider font-mono"
                                     required
                                 />
                             </div>
@@ -269,7 +285,7 @@ export default function Index({
                                                     </span>
                                                 </div>
                                                 <div className="text-xs text-white uppercase font-bold tracking-wider">
-                                                    {new Date(week.week_start).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} - {new Date(week.week_end).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                    {new Date(week.week_start).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: '2-digit', month: 'short' })} - {new Date(week.week_end).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: '2-digit', month: 'short', year: 'numeric' })}
                                                 </div>
                                                 <div className="flex justify-between items-center text-xs pt-1 border-t border-[#2C2C2C]/50">
                                                     <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Hours: {week.hours.toFixed(2)}h</span>
@@ -312,10 +328,10 @@ export default function Index({
                                                 {filteredWeeklyBreakdown.map((week, idx) => (
                                                     <tr key={idx} className="hover:bg-[#252525] transition-colors">
                                                         <td className="p-4 text-xs font-mono uppercase tracking-wider">
-                                                            {new Date(week.week_start).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                            {new Date(week.week_start).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: '2-digit', month: 'short', year: 'numeric' })}
                                                         </td>
                                                         <td className="p-4 text-xs font-mono uppercase tracking-wider font-bold text-white">
-                                                            {new Date(week.week_end).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                            {new Date(week.week_end).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: '2-digit', month: 'short', year: 'numeric' })}
                                                         </td>
                                                         <td className="p-4 text-xs uppercase tracking-wider">{week.hours.toFixed(2)}h</td>
                                                         <td className="p-4 text-xs font-bold text-white tracking-wider">£{week.earnings.toFixed(2)}</td>
@@ -394,11 +410,11 @@ export default function Index({
                                                         </span>
                                                     </div>
                                                     <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">
-                                                        {new Date(day.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                        {new Date(day.date).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: '2-digit', month: 'short', year: 'numeric' })}
                                                     </span>
                                                 </div>
                                                 <div className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">
-                                                    Hours: {day.clock_in} - {day.clock_out} ({day.hours.toFixed(2)}h)
+                                                    Hours: {formatTime12(day.clock_in)} - {formatTime12(day.clock_out)} ({day.hours.toFixed(2)}h)
                                                 </div>
                                                 <div className="flex justify-between items-center text-xs pt-1 border-t border-[#2C2C2C]/50">
                                                     <span className="text-gray-500 uppercase font-bold tracking-widest text-[9px]">Shift Earnings</span>
@@ -432,10 +448,10 @@ export default function Index({
                                                             {day.branch_name}
                                                         </td>
                                                         <td className="p-4 text-xs font-mono uppercase tracking-wider">
-                                                            {new Date(day.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                            {new Date(day.date).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: '2-digit', month: 'short', year: 'numeric' })}
                                                         </td>
-                                                        <td className="p-4 text-xs font-mono uppercase tracking-wider">{day.clock_in}</td>
-                                                        <td className="p-4 text-xs font-mono uppercase tracking-wider">{day.clock_out}</td>
+                                                        <td className="p-4 text-xs font-mono uppercase tracking-wider">{formatTime12(day.clock_in)}</td>
+                                                        <td className="p-4 text-xs font-mono uppercase tracking-wider">{formatTime12(day.clock_out)}</td>
                                                         <td className="p-4 text-xs uppercase tracking-wider">{day.hours.toFixed(2)}h</td>
                                                         <td className="p-4 text-xs font-bold text-right text-indigo-400 tracking-wider flex items-center justify-end gap-3">
                                                             <span>£{day.earnings.toFixed(2)}</span>
@@ -761,10 +777,10 @@ export default function Index({
                                                     {shift.is_cleared ? 'Cleared' : 'Unpaid'}
                                                 </span>
                                             </div>
-                                            <span className="font-mono">{new Date(shift.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} {shift.is_sunday && '(Sunday)'}</span>
+                                            <span className="font-mono">{new Date(shift.date).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: '2-digit', month: 'short', year: 'numeric' })} {shift.is_sunday && '(Sunday)'}</span>
                                         </div>
                                         <div className="flex justify-between items-center text-xs">
-                                            <span>{shift.clock_in} - {shift.clock_out} ({shift.hours.toFixed(2)}h)</span>
+                                            <span>{formatTime12(shift.clock_in)} - {formatTime12(shift.clock_out)} ({shift.hours.toFixed(2)}h)</span>
                                             <span className="font-bold">£{shift.earnings.toFixed(2)}</span>
                                         </div>
                                     </div>
@@ -798,11 +814,11 @@ export default function Index({
                                             >
                                                 <td className="p-3 uppercase tracking-wider">{shift.branch_name}</td>
                                                 <td className="p-3 font-mono">
-                                                    {new Date(shift.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                    {new Date(shift.date).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: '2-digit', month: 'short', year: 'numeric' })}
                                                     {shift.is_sunday && <span className="text-[9px] uppercase tracking-widest font-black ml-2 text-amber-500 bg-amber-500/10 px-1.5 py-0.5 border border-amber-500/20">Sunday</span>}
                                                 </td>
-                                                <td className="p-3 font-mono">{shift.clock_in}</td>
-                                                <td className="p-3 font-mono">{shift.clock_out}</td>
+                                                <td className="p-3 font-mono">{formatTime12(shift.clock_in)}</td>
+                                                <td className="p-3 font-mono">{formatTime12(shift.clock_out)}</td>
                                                 <td className="p-3">{shift.hours.toFixed(2)}h</td>
                                                 <td className="p-3 text-right font-mono font-bold flex items-center justify-end gap-3">
                                                     <span>£{shift.earnings.toFixed(2)}</span>

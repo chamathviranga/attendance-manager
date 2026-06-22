@@ -4,6 +4,9 @@ import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import Swal from 'sweetalert2';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
+import TimePicker12 from '@/Components/TimePicker12';
 
 export default function AttendanceFab({ branches = [], activeAttendance = null }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -16,8 +19,8 @@ export default function AttendanceFab({ branches = [], activeAttendance = null }
     const [manualForm, setManualForm] = useState({
         branch_id: '',
         date: new Date().toISOString().split('T')[0],
-        clock_in_time: '09:00',
-        clock_out_time: '17:00'
+        clock_in_time: '09:00 AM',
+        clock_out_time: '05:00 PM'
     });
 
     useEffect(() => {
@@ -196,7 +199,7 @@ export default function AttendanceFab({ branches = [], activeAttendance = null }
                                         {elapsedTime}
                                     </div>
                                     <p className="text-[10px] text-gray-500 uppercase tracking-widest">
-                                        Clocked in at {new Date(activeAttendance.clock_in_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                                        Clocked in at {new Date(activeAttendance.clock_in_at).toLocaleTimeString('en-US', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: true })}
                                     </p>
                                     <button
                                         onClick={handleClockOut}
@@ -257,35 +260,31 @@ export default function AttendanceFab({ branches = [], activeAttendance = null }
 
                             <div>
                                 <InputLabel value="Select Date" className="mb-2" />
-                                <TextInput
-                                    type="date"
-                                    value={manualForm.date}
-                                    max={new Date().toISOString().split('T')[0]}
-                                    onChange={(e) => setManualForm(prev => ({ ...prev, date: e.target.value }))}
+                                <DatePicker
+                                    selected={new Date(manualForm.date)}
+                                    onChange={(date) => setManualForm(prev => ({ ...prev, date: date.toISOString().split('T')[0] }))}
+                                    maxDate={new Date()}
+                                    dateFormat="yyyy-MM-dd"
                                     required
-                                    className="w-full uppercase tracking-wider font-mono"
+                                    className="w-full rounded-none border-[#2C2C2C] bg-[#121212] text-white text-xs py-3 px-4 focus:border-indigo-500 focus:ring-0 uppercase tracking-wider font-mono"
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <InputLabel value="Clock In Time" className="mb-2" />
-                                    <TextInput
-                                        type="time"
+                                    <TimePicker12 
                                         value={manualForm.clock_in_time}
-                                        onChange={(e) => setManualForm(prev => ({ ...prev, clock_in_time: e.target.value }))}
-                                        required
-                                        className="w-full font-mono"
+                                        onChange={(val) => setManualForm(prev => ({ ...prev, clock_in_time: val }))}
+                                        className="h-[42px]"
                                     />
                                 </div>
                                 <div>
                                     <InputLabel value="Clock Out Time" className="mb-2" />
-                                    <TextInput
-                                        type="time"
+                                    <TimePicker12 
                                         value={manualForm.clock_out_time}
-                                        onChange={(e) => setManualForm(prev => ({ ...prev, clock_out_time: e.target.value }))}
-                                        required
-                                        className="w-full font-mono"
+                                        onChange={(val) => setManualForm(prev => ({ ...prev, clock_out_time: val }))}
+                                        className="h-[42px]"
                                     />
                                 </div>
                             </div>

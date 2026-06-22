@@ -6,6 +6,9 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 import Swal from 'sweetalert2';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
+import TimePicker12 from '@/Components/TimePicker12';
 
 const Toast = Swal.mixin({
     toast: true,
@@ -29,8 +32,8 @@ export default function Index({ schedules = [], employees = [], branches = [], r
         exchanged_with_employee_id: '',
         branch_id: '',
         date: '',
-        start_time: '09:00',
-        end_time: '17:00',
+        start_time: '09:00 AM',
+        end_time: '05:00 PM',
         status: 'Scheduled',
         repeat_type: 'None',
         repeat_until: '',
@@ -62,8 +65,8 @@ export default function Index({ schedules = [], employees = [], branches = [], r
             exchanged_with_employee_id: '',
             branch_id: branches[0]?.id.toString() || '',
             date: '',
-            start_time: '09:00',
-            end_time: '17:00',
+            start_time: '09:00 AM',
+            end_time: '05:00 PM',
             status: 'Scheduled',
             repeat_type: 'None',
             repeat_until: '',
@@ -84,8 +87,8 @@ export default function Index({ schedules = [], employees = [], branches = [], r
             exchanged_with_employee_id: schedule.exchanged_with_employee_id ? schedule.exchanged_with_employee_id.toString() : '',
             branch_id: schedule.branch_id.toString(),
             date: schedule.date.split('T')[0],
-            start_time: schedule.start_time.substring(0, 5),
-            end_time: schedule.end_time.substring(0, 5),
+            start_time: new Date(`1970-01-01 ${schedule.start_time}`).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+            end_time: new Date(`1970-01-01 ${schedule.end_time}`).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
             status: schedule.status,
         });
         setIsEditing(true);
@@ -263,10 +266,10 @@ export default function Index({ schedules = [], employees = [], branches = [], r
                     </div>
                     <div>
                         <label className="text-[10px] text-gray-500 uppercase tracking-widest font-bold block mb-1.5">Filter Date</label>
-                        <input
-                            type="date"
-                            value={filterDate}
-                            onChange={(e) => setFilterDate(e.target.value)}
+                        <DatePicker
+                            selected={filterDate ? new Date(filterDate) : null}
+                            onChange={(date) => setFilterDate(date ? date.toISOString().split('T')[0] : '')}
+                            dateFormat="yyyy-MM-dd"
                             className="w-full bg-[#121212] border border-[#2C2C2C] text-white text-xs rounded-none focus:border-indigo-500 focus:ring-0 py-2 px-3 h-[38px]"
                         />
                     </div>
@@ -298,7 +301,7 @@ export default function Index({ schedules = [], employees = [], branches = [], r
                                             <div className="mt-4 space-y-2 text-xs text-gray-400">
                                                 <p className="flex justify-between">
                                                     <span className="font-bold text-gray-500 tracking-widest uppercase text-[10px]">Date</span>
-                                                    <span className="text-white">{new Date(schedule.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                                    <span className="text-white">{new Date(schedule.date).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short', year: 'numeric' })}</span>
                                                 </p>
                                                 <p className="flex justify-between">
                                                     <span className="font-bold text-gray-500 tracking-widest uppercase text-[10px]">Time</span>
@@ -351,7 +354,7 @@ export default function Index({ schedules = [], employees = [], branches = [], r
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-indigo-400 font-bold text-xs uppercase tracking-wider">{schedule.branch?.name}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-gray-400">
-                                                        {new Date(schedule.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                        {new Date(schedule.date).toLocaleDateString('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short', year: 'numeric' })}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-gray-400 font-bold">
                                                         {schedule.start_time.substring(0, 5)} - {schedule.end_time.substring(0, 5)}
@@ -442,11 +445,11 @@ export default function Index({ schedules = [], employees = [], branches = [], r
 
                         <div>
                             <InputLabel htmlFor="date" value="Shift Date *" className="text-[#A0A0A0] text-xs uppercase tracking-widest" />
-                            <input
-                                type="date"
+                            <DatePicker
                                 id="date"
-                                value={data.date}
-                                onChange={(e) => setData('date', e.target.value)}
+                                selected={data.date ? new Date(data.date) : null}
+                                onChange={(date) => setData('date', date ? date.toISOString().split('T')[0] : '')}
+                                dateFormat="yyyy-MM-dd"
                                 className="mt-2 block w-full bg-[#121212] border border-[#2C2C2C] text-white rounded-none focus:border-indigo-500 focus:ring-0 py-2.5 px-3 h-[42px] text-xs"
                                 required
                             />
@@ -490,26 +493,20 @@ export default function Index({ schedules = [], employees = [], branches = [], r
 
                         <div>
                             <InputLabel htmlFor="start_time" value="Start Time *" className="text-[#A0A0A0] text-xs uppercase tracking-widest" />
-                            <input
-                                type="time"
-                                id="start_time"
+                            <TimePicker12
                                 value={data.start_time}
-                                onChange={(e) => setData('start_time', e.target.value)}
-                                className="mt-2 block w-full bg-[#121212] border border-[#2C2C2C] text-white rounded-none focus:border-indigo-500 focus:ring-0 py-2.5 px-3 h-[42px] text-xs"
-                                required
+                                onChange={(val) => setData('start_time', val)}
+                                className="mt-2"
                             />
                             <InputError message={errors.start_time} className="mt-1" />
                         </div>
 
                         <div>
                             <InputLabel htmlFor="end_time" value="End Time *" className="text-[#A0A0A0] text-xs uppercase tracking-widest" />
-                            <input
-                                type="time"
-                                id="end_time"
+                            <TimePicker12
                                 value={data.end_time}
-                                onChange={(e) => setData('end_time', e.target.value)}
-                                className="mt-2 block w-full bg-[#121212] border border-[#2C2C2C] text-white rounded-none focus:border-indigo-500 focus:ring-0 py-2.5 px-3 h-[42px] text-xs"
-                                required
+                                onChange={(val) => setData('end_time', val)}
+                                className="mt-2"
                             />
                             <InputError message={errors.end_time} className="mt-1" />
                         </div>
@@ -534,14 +531,14 @@ export default function Index({ schedules = [], employees = [], branches = [], r
                         {data.repeat_type !== 'None' && (
                             <div>
                                 <InputLabel htmlFor="repeat_until" value="Repeat Until *" className="text-[#A0A0A0] text-xs uppercase tracking-widest" />
-                                <input
-                                    type="date"
+                                <DatePicker
                                     id="repeat_until"
-                                    value={data.repeat_until}
-                                    onChange={(e) => setData('repeat_until', e.target.value)}
+                                    selected={data.repeat_until ? new Date(data.repeat_until) : null}
+                                    onChange={(date) => setData('repeat_until', date ? date.toISOString().split('T')[0] : '')}
+                                    dateFormat="yyyy-MM-dd"
+                                    minDate={data.date ? new Date(data.date) : new Date()}
                                     className="mt-2 block w-full bg-[#121212] border border-[#2C2C2C] text-white rounded-none focus:border-indigo-500 focus:ring-0 py-2.5 px-3 h-[42px] text-xs"
                                     required
-                                    min={data.date || undefined}
                                 />
                                 <InputError message={errors.repeat_until} className="mt-1" />
                             </div>
@@ -609,11 +606,11 @@ export default function Index({ schedules = [], employees = [], branches = [], r
 
                         <div>
                             <InputLabel htmlFor="edit_date" value="Shift Date *" className="text-[#A0A0A0] text-xs uppercase tracking-widest" />
-                            <input
-                                type="date"
+                            <DatePicker
                                 id="edit_date"
-                                value={editForm.data.date}
-                                onChange={(e) => editForm.setData('date', e.target.value)}
+                                selected={editForm.data.date ? new Date(editForm.data.date) : null}
+                                onChange={(date) => editForm.setData('date', date ? date.toISOString().split('T')[0] : '')}
+                                dateFormat="yyyy-MM-dd"
                                 className="mt-2 block w-full bg-[#121212] border border-[#2C2C2C] text-white rounded-none focus:border-indigo-500 focus:ring-0 py-2.5 px-3 h-[42px] text-xs"
                                 required
                             />
@@ -657,26 +654,20 @@ export default function Index({ schedules = [], employees = [], branches = [], r
 
                         <div>
                             <InputLabel htmlFor="edit_start_time" value="Start Time *" className="text-[#A0A0A0] text-xs uppercase tracking-widest" />
-                            <input
-                                type="time"
-                                id="edit_start_time"
+                            <TimePicker12
                                 value={editForm.data.start_time}
-                                onChange={(e) => editForm.setData('start_time', e.target.value)}
-                                className="mt-2 block w-full bg-[#121212] border border-[#2C2C2C] text-white rounded-none focus:border-indigo-500 focus:ring-0 py-2.5 px-3 h-[42px] text-xs"
-                                required
+                                onChange={(val) => editForm.setData('start_time', val)}
+                                className="mt-2"
                             />
                             <InputError message={editForm.errors.start_time} className="mt-1" />
                         </div>
 
                         <div>
                             <InputLabel htmlFor="edit_end_time" value="End Time *" className="text-[#A0A0A0] text-xs uppercase tracking-widest" />
-                            <input
-                                type="time"
-                                id="edit_end_time"
+                            <TimePicker12
                                 value={editForm.data.end_time}
-                                onChange={(e) => editForm.setData('end_time', e.target.value)}
-                                className="mt-2 block w-full bg-[#121212] border border-[#2C2C2C] text-white rounded-none focus:border-indigo-500 focus:ring-0 py-2.5 px-3 h-[42px] text-xs"
-                                required
+                                onChange={(val) => editForm.setData('end_time', val)}
+                                className="mt-2"
                             />
                             <InputError message={editForm.errors.end_time} className="mt-1" />
                         </div>

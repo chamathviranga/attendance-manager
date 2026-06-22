@@ -31,18 +31,19 @@ export default function Index({ attendances = [], branches = [], activeAttendanc
                             <div className="sm:hidden divide-y divide-[#2C2C2C]">
                                 {attendances.map((att) => {
                                     const dateStr = new Date(att.clock_in_at).toLocaleDateString('en-GB', {
+                                                timeZone: 'Europe/London',
                                         day: '2-digit',
                                         month: 'short',
                                         year: 'numeric'
                                     });
-                                    const clockInStr = new Date(att.clock_in_at).toLocaleTimeString('en-GB', {
-                                        hour: '2-digit',
-                                        minute: '2-digit'
+                                    const clockInStr = new Date(att.clock_in_at).toLocaleTimeString('en-US', {
+                                        timeZone: 'Europe/London',
+                                        hour: '2-digit', minute: '2-digit', hour12: true
                                     });
                                     const clockOutStr = att.clock_out_at
-                                        ? new Date(att.clock_out_at).toLocaleTimeString('en-GB', {
-                                            hour: '2-digit',
-                                            minute: '2-digit'
+                                        ? new Date(att.clock_out_at).toLocaleTimeString('en-US', {
+                                        timeZone: 'Europe/London',
+                                            hour: '2-digit', minute: '2-digit', hour12: true
                                         })
                                         : '--:--';
 
@@ -88,18 +89,19 @@ export default function Index({ attendances = [], branches = [], activeAttendanc
                                     <tbody className="divide-y divide-[#2C2C2C] text-gray-300">
                                         {attendances.map((att) => {
                                             const dateStr = new Date(att.clock_in_at).toLocaleDateString('en-GB', {
+                                                timeZone: 'Europe/London',
                                                 day: '2-digit',
                                                 month: 'short',
                                                 year: 'numeric'
                                             });
-                                            const clockInStr = new Date(att.clock_in_at).toLocaleTimeString('en-GB', {
-                                                hour: '2-digit',
-                                                minute: '2-digit'
+                                            const clockInStr = new Date(att.clock_in_at).toLocaleTimeString('en-US', {
+                                        timeZone: 'Europe/London',
+                                                hour: '2-digit', minute: '2-digit', hour12: true
                                             });
                                             const clockOutStr = att.clock_out_at
-                                                ? new Date(att.clock_out_at).toLocaleTimeString('en-GB', {
-                                                    hour: '2-digit',
-                                                    minute: '2-digit'
+                                                ? new Date(att.clock_out_at).toLocaleTimeString('en-US', {
+                                        timeZone: 'Europe/London',
+                                                    hour: '2-digit', minute: '2-digit', hour12: true
                                                 })
                                                 : '--:--';
 

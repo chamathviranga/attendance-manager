@@ -3,6 +3,8 @@ import { Head, usePage, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import AttendanceFab from '@/Components/AttendanceFab';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 
 export default function Dashboard({ stats = [], activities = [], branches = [], activeAttendance = null, filters = {}, salaryReport = null }) {
     const user = usePage().props.auth.user;
@@ -17,8 +19,9 @@ export default function Dashboard({ stats = [], activities = [], branches = [], 
         setToDate(filters.to_date || '');
     }, [filters]);
 
-    const handleFromDateChange = (e) => {
-        const val = e.target.value;
+    const handleFromDateChange = (date) => {
+        if (!date) return;
+        const val = date.toISOString().split('T')[0];
         setFromDate(val);
         router.get('/dashboard', {
             from_date: val,
@@ -29,8 +32,9 @@ export default function Dashboard({ stats = [], activities = [], branches = [], 
         });
     };
 
-    const handleToDateChange = (e) => {
-        const val = e.target.value;
+    const handleToDateChange = (date) => {
+        if (!date) return;
+        const val = date.toISOString().split('T')[0];
         setToDate(val);
         router.get('/dashboard', {
             from_date: fromDate,
@@ -111,19 +115,19 @@ export default function Dashboard({ stats = [], activities = [], branches = [], 
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 w-full lg:w-auto bg-[#1E1E1E] border border-[#2C2C2C] p-3 sm:p-4">
                         <div className="w-full sm:w-40">
                             <label className="block text-[9px] text-[#A0A0A0] uppercase tracking-widest font-bold mb-1.5">From Date</label>
-                            <input
-                                type="date"
-                                value={fromDate}
+                            <DatePicker
+                                selected={fromDate ? new Date(fromDate) : null}
                                 onChange={handleFromDateChange}
+                                dateFormat="yyyy-MM-dd"
                                 className="w-full rounded-none border-[#2C2C2C] bg-[#121212] text-white text-xs py-3 px-4 focus:border-indigo-500 focus:ring-0 uppercase tracking-wider font-bold font-mono"
                             />
                         </div>
                         <div className="w-full sm:w-40">
                             <label className="block text-[9px] text-[#A0A0A0] uppercase tracking-widest font-bold mb-1.5">To Date</label>
-                            <input
-                                type="date"
-                                value={toDate}
+                            <DatePicker
+                                selected={toDate ? new Date(toDate) : null}
                                 onChange={handleToDateChange}
+                                dateFormat="yyyy-MM-dd"
                                 className="w-full rounded-none border-[#2C2C2C] bg-[#121212] text-white text-xs py-3 px-4 focus:border-indigo-500 focus:ring-0 uppercase tracking-wider font-bold font-mono"
                             />
                         </div>
