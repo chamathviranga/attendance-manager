@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Attendance extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'user_id',
         'branch_id',
@@ -13,6 +16,7 @@ class Attendance extends Model
         'clock_out_at',
         'duration_minutes',
         'is_cleared',
+        'delete_remark',
     ];
 
     protected $casts = [

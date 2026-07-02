@@ -41,6 +41,17 @@ class AttendanceController extends Controller
             return redirect()->back()->withErrors(['error' => 'You are already clocked in.']);
         }
 
+        $now = Carbon::now();
+        $overlap = Attendance::where('user_id', $user->id)
+            ->whereNotNull('clock_out_at')
+            ->where('clock_in_at', '<=', $now)
+            ->where('clock_out_at', '>=', $now)
+            ->exists();
+
+        if ($overlap) {
+            return redirect()->back()->withErrors(['error' => 'You cannot clock in because you have an existing shift recorded for this time.']);
+        }
+
         // Enforce scheduling rules if scheduling is active for this business
         $schedulingActive = \App\Models\ShiftSchedule::where('business_id', $employee->business_id)->exists();
         if ($schedulingActive) {
@@ -154,6 +165,27 @@ class AttendanceController extends Controller
             $clockOut->addDay();
         }
 
+        if ($clockOut->isFuture()) {
+            return redirect()->back()->withErrors(['error' => 'You cannot enter a manual shift for a future date or time.']);
+        }
+
+        $hasOverlap = Attendance::where('user_id', $user->id)
+            ->where(function ($query) use ($clockIn, $clockOut) {
+                $query->where(function ($q) use ($clockIn, $clockOut) {
+                    $q->whereNotNull('clock_out_at')
+                      ->where('clock_in_at', '<', $clockOut)
+                      ->where('clock_out_at', '>', $clockIn);
+                })->orWhere(function ($q) use ($clockIn, $clockOut) {
+                    $q->whereNull('clock_out_at')
+                      ->where('clock_in_at', '<', $clockOut);
+                });
+            })
+            ->exists();
+
+        if ($hasOverlap) {
+            return redirect()->back()->withErrors(['error' => 'This shift overlaps with an existing attendance or shift entry.']);
+        }
+
         $duration = $clockIn->diffInMinutes($clockOut);
 
         Attendance::create([
@@ -165,5 +197,45 @@ class AttendanceController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Manual shift entry saved successfully!');
+    }
+
+    public function destroy(Request $request, $id): RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'SHOP_OWNER') {
+            abort(403, 'Unauthorized.');
+        }
+
+        $business = \App\Models\Business::where('user_id', $user->id)->first();
+        if (!$business) {
+            abort(403, 'No associated business found.');
+        }
+
+        $attendance = Attendance::findOrFail($id);
+
+        $branch = Branch::where('id', $attendance->branch_id)
+            ->where('business_id', $business->id)
+            ->first();
+
+        if (!$branch) {
+            abort(403, 'Unauthorized.');
+        }
+
+        if ($attendance->is_cleared) {
+            return redirect()->back()->withErrors(['error' => 'You cannot delete a cleared/paid shift.']);
+        }
+
+        $request->validate([
+            'remark' => 'required|string|max:255',
+        ]);
+
+        $attendance->update([
+            'delete_remark' => $request->input('remark'),
+        ]);
+
+        $attendance->delete();
+
+        return redirect()->back()->with('success', 'Shift deleted successfully.');
     }
 }

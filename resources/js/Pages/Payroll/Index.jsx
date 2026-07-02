@@ -124,6 +124,56 @@ export default function Index({
         });
     };
 
+    const handleDeleteShift = (shift) => {
+        Swal.fire({
+            title: 'Delete Unpaid Shift',
+            text: 'Are you sure you want to delete this shift? This will soft-delete the record.',
+            icon: 'warning',
+            input: 'text',
+            inputPlaceholder: 'Enter deletion remark...',
+            showCancelButton: true,
+            confirmButtonColor: '#EF4444',
+            cancelButtonColor: '#374151',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'A deletion remark is required!';
+                }
+            },
+            customClass: {
+                popup: 'bg-[#1E1E1E] text-white border border-[#2C2C2C]',
+                title: 'text-sm tracking-widest font-bold uppercase text-white',
+                htmlContainer: 'text-xs text-gray-400 uppercase tracking-widest',
+                input: 'bg-[#121212] border-[#2C2C2C] text-white text-xs py-2 px-3 focus:border-indigo-500 focus:ring-0',
+                confirmButton: 'bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase px-4 py-2 tracking-widest',
+                cancelButton: 'border border-[#2C2C2C] hover:bg-[#2C2C2C] text-white font-bold text-xs uppercase px-4 py-2 tracking-widest'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                router.delete(route('attendance.destroy', shift.id), {
+                    data: { remark: result.value },
+                    preserveState: false,
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        Swal.fire({
+                            title: 'Deleted!',
+                            text: 'The shift has been soft-deleted.',
+                            icon: 'success',
+                            customClass: {
+                                popup: 'bg-[#1E1E1E] text-white border border-[#2C2C2C]',
+                                title: 'text-sm tracking-widest font-bold uppercase text-white',
+                                htmlContainer: 'text-xs text-gray-400 uppercase tracking-widest',
+                                confirmButton: 'bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2 tracking-widest'
+                            }
+                        });
+                        setSelectedEmpForShifts(null);
+                    }
+                });
+            }
+        });
+    };
+
     const toggleSelectEmp = (id) => {
         setSelectedEmpIds(prev => 
             prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
@@ -783,6 +833,17 @@ export default function Index({
                                             <span>{formatTime12(shift.clock_in)} - {formatTime12(shift.clock_out)} ({shift.hours.toFixed(2)}h)</span>
                                             <span className="font-bold">£{shift.earnings.toFixed(2)}</span>
                                         </div>
+                                        {!shift.is_cleared && (
+                                            <div className="pt-2 flex justify-end">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteShift(shift)}
+                                                    className="text-red-500 hover:text-red-400 font-bold uppercase tracking-widest text-[9px] border border-red-500/20 px-2 py-1 bg-red-950/10 hover:bg-red-950/20 transition-colors"
+                                                >
+                                                    Delete Shift
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -829,6 +890,15 @@ export default function Index({
                                                     }`}>
                                                         {shift.is_cleared ? 'Cleared' : 'Unpaid'}
                                                     </span>
+                                                    {!shift.is_cleared && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDeleteShift(shift)}
+                                                            className="text-red-500 hover:text-red-400 font-bold uppercase tracking-widest text-[9px] border border-red-500/20 px-2 py-1 bg-red-950/10 hover:bg-red-950/20 transition-colors ml-2"
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))}
