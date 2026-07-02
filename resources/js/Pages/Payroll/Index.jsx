@@ -190,26 +190,11 @@ export default function Index({
     };
 
     const handleReset = () => {
-        const today = new Date();
-        const currentDay = today.getDay(); // 0 is Sunday, 1 is Monday...
-        const mondayDiff = today.getDate() - currentDay + (currentDay === 0 ? -6 : 1);
-        const monday = new Date(today.setDate(mondayDiff));
-        
-        const sunday = new Date(monday);
-        sunday.setDate(monday.getDate() + 6);
-
-        const pad = (n) => String(n).padStart(2, '0');
-        const start = `${monday.getFullYear()}-${pad(monday.getMonth() + 1)}-${pad(monday.getDate())}`;
-        const end = `${sunday.getFullYear()}-${pad(sunday.getMonth() + 1)}-${pad(sunday.getDate())}`;
-
-        setStartDate(start);
-        setEndDate(end);
+        setStartDate('');
+        setEndDate('');
         setPaymentStatusFilter('All');
 
-        router.get(route('payroll.index'), {
-            start_date: start,
-            end_date: end
-        });
+        router.get(route('payroll.index'));
     };
 
     const totalHours = filteredDailyBreakdown.reduce((sum, item) => sum + item.hours, 0);

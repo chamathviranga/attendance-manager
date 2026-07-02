@@ -27,11 +27,19 @@ class PayrollController extends Controller
 
         [$defaultStart, $defaultEnd] = $this->getPayrollDateRange($business);
 
-        $startDateStr = $request->query('start_date', $defaultStart->toDateString());
-        $endDateStr = $request->query('end_date', $defaultEnd->toDateString());
+        $hasFilters = $request->filled('start_date') && $request->filled('end_date');
 
-        $startDate = Carbon::parse($startDateStr)->startOfDay();
-        $endDate = Carbon::parse($endDateStr)->endOfDay();
+        if ($hasFilters) {
+            $startDateStr = $request->query('start_date');
+            $endDateStr = $request->query('end_date');
+            $startDate = Carbon::parse($startDateStr)->startOfDay();
+            $endDate = Carbon::parse($endDateStr)->endOfDay();
+        } else {
+            $startDateStr = '';
+            $endDateStr = '';
+            $startDate = null;
+            $endDate = null;
+        }
 
         if ($role === 'EMPLOYEE') {
             $employee = Employee::where('user_id', $user->id)->first();
@@ -41,11 +49,16 @@ class PayrollController extends Controller
 
             $hourlyRate = $employee->salary ?? 0;
 
-            $attendances = Attendance::with('branch')
-                ->where('user_id', $user->id)
-                ->whereBetween('clock_in_at', [$startDate, $endDate])
-                ->orderBy('clock_in_at', 'desc')
-                ->get();
+            $query = Attendance::with('branch')
+                ->where('user_id', $user->id);
+
+            if ($hasFilters) {
+                $query->whereBetween('clock_in_at', [$startDate, $endDate]);
+            } else {
+                $query->where('is_cleared', false);
+            }
+
+            $attendances = $query->orderBy('clock_in_at', 'desc')->get();
 
             $dailyBreakdown = [];
             foreach ($attendances as $att) {
@@ -131,11 +144,16 @@ class PayrollController extends Controller
                 foreach ($employees as $emp) {
                     $empRate = $emp->salary ?? 0;
 
-                    $empAtts = Attendance::with('branch')
-                        ->where('user_id', $emp->user_id)
-                        ->whereBetween('clock_in_at', [$startDate, $endDate])
-                        ->orderBy('clock_in_at', 'desc')
-                        ->get();
+                    $query = Attendance::with('branch')
+                        ->where('user_id', $emp->user_id);
+
+                    if ($hasFilters) {
+                        $query->whereBetween('clock_in_at', [$startDate, $endDate]);
+                    } else {
+                        $query->where('is_cleared', false);
+                    }
+
+                    $empAtts = $query->orderBy('clock_in_at', 'desc')->get();
 
                     $totalHours = 0;
                     $totalEarnings = 0;
@@ -208,14 +226,12 @@ class PayrollController extends Controller
         }
 
         $request->validate([
-            'start_date' => 'required|date',
-            'end_date' => 'required|date',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
             'employee_ids' => 'required|array',
             'employee_ids.*' => 'integer|exists:employees,id',
         ]);
 
-        $startDate = Carbon::parse($request->input('start_date'))->startOfDay();
-        $endDate = Carbon::parse($request->input('end_date'))->endOfDay();
         $employeeIds = $request->input('employee_ids');
 
         $business = Business::where('user_id', $user->id)->first();
@@ -231,9 +247,17 @@ class PayrollController extends Controller
             return back()->with('error', 'No valid employees selected.');
         }
 
-        Attendance::whereBetween('clock_in_at', [$startDate, $endDate])
-            ->whereIn('user_id', $empUserIds)
-            ->update(['is_cleared' => true]);
+        $query = Attendance::whereIn('user_id', $empUserIds);
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $startDate = Carbon::parse($request->input('start_date'))->startOfDay();
+            $endDate = Carbon::parse($request->input('end_date'))->endOfDay();
+            $query->whereBetween('clock_in_at', [$startDate, $endDate]);
+        } else {
+            $query->where('is_cleared', false);
+        }
+
+        $query->update(['is_cleared' => true]);
 
         return back()->with('success', 'Payments cleared successfully.');
     }
